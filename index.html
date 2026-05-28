@@ -89,7 +89,6 @@
       body.detail-open #sheet { transform: translateY(100%); opacity: 0; pointer-events: none; }
     }
 
-    .handle-wrap { padding: 10px 0 0; cursor: pointer; }
     .handle { width: 40px; height: 4px; border-radius: 2px; background: var(--black); margin: 0 auto; }
 
     .sheet-header { padding: 10px 16px 2px; display: flex; align-items: center; justify-content: space-between; }
@@ -101,8 +100,34 @@
       display: flex; gap: 12px;
       overflow-x: auto; padding: 10px 16px 24px;
       scroll-snap-type: x mandatory;
+      touch-action: pan-x;
+      overscroll-behavior-x: contain;
+      align-items: flex-start;
+      width: 100%;
     }
     #cards::-webkit-scrollbar { display: none; }
+
+    /* ── SCROLL BUTTONS (desktop only) ── */
+    .cards-scroll-btn {
+      display: none;
+    }
+    @media (min-width: 768px) {
+      .cards-scroll-btn {
+        display: flex; align-items: center; justify-content: center;
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 36px; height: 36px; border-radius: 50%;
+        background: #F5F0EB; border: var(--border); box-shadow: var(--shadow-sm);
+        cursor: pointer; font-size: 16px; font-weight: 800; color: var(--black);
+        z-index: 5; transition: opacity 0.2s;
+        flex-shrink: 0;
+      }
+      .cards-scroll-btn:hover { background: var(--black); color: #fff; }
+      .cards-scroll-btn:active { transform: translateY(-50%) translate(2px,2px); box-shadow: none; }
+      .cards-scroll-btn.hidden { opacity: 0; pointer-events: none; }
+      #cards-prev { left: 4px; }
+      #cards-next { right: 4px; }
+      #sheet { position: fixed; }
+    }
 
     .place-card {
       scroll-snap-align: start; flex-shrink: 0;
@@ -152,10 +177,19 @@
     .card-status.open   { color: #6EF5A8; }
     .card-status.closed { color: rgba(255,255,255,0.55); }
 
+    /* ── DETAIL BACKDROP (desktop click-outside) ── */
+    #detail-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 49;
+    }
+    @media (min-width: 768px) {
+      #detail-backdrop.open { display: block; }
+    }
+
     /* ── DETAIL SHEET ── */
     #detail {
       position: fixed; bottom: 0; left: 0; right: 0;
-      height: 80dvh; z-index: 50;
+      height: 92dvh; z-index: 50;
       background: #F5F0EB;
       border-radius: 24px 24px 0 0;
       transform: translateY(100%);
@@ -163,6 +197,17 @@
       display: flex; flex-direction: column; overflow: hidden;
     }
     #detail.open { transform: translateY(0); }
+
+    /* Mobile: hide back button, show drag handle */
+    @media (max-width: 767px) {
+      .detail-back { display: none !important; }
+      .detail-drag-handle { display: flex !important; }
+    }
+    .detail-drag-handle {
+      display: none;
+      padding: 10px 0 4px; cursor: grab; flex-shrink: 0;
+    }
+    .detail-drag-handle .handle { margin: 0 auto; }
 
     @media (min-width: 768px) {
       #detail {
@@ -237,7 +282,7 @@
     .hours-block-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #888; margin-bottom: 8px; }
     .hours-line { font-size: 13px; font-weight: 600; color: var(--black); line-height: 1.7; }
 
-    .detail-desc { font-size: 14px; font-weight: 500; color: #555; line-height: 1.65; margin-bottom: 24px; }
+    .detail-desc { font-size: 14px; font-weight: 500; color: #555; line-height: 1.65; margin-bottom: 12px; }
 
     .cta-btn {
       display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -252,12 +297,52 @@
     .cta-btn.secondary { background: white; color: var(--black); }
     .cta-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
+    .handle-wrap { padding: 10px 0 0; cursor: pointer; }
+
+    /* ── MAP CONTROLS (zoom + locate, Google Maps style) ── */
+    #map-controls {
+      position: fixed; top: 136px; right: 12px; z-index: 35;
+      display: flex; flex-direction: column;
+      border: var(--border); border-radius: 14px;
+      overflow: hidden; box-shadow: var(--shadow); background: #F5F0EB;
+    }
+    #map-controls button {
+      width: 40px; height: 40px; background: #F5F0EB;
+      border: none; border-bottom: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--black);
+      font-size: 20px; font-weight: 800; line-height: 1;
+      transition: background 0.15s, color 0.15s;
+    }
+    #map-controls button:last-child { border-bottom: none; }
+    .map-ctrl-divider { height: 1px; background: var(--black); flex-shrink: 0; }
+    @media (hover: hover) {
+      #map-controls button:hover { background: var(--black); color: white; }
+    }
+    #map-controls button:active { background: var(--black); color: white; }
+    #locate-btn.active { background: #4361EE !important; color: white !important; }
+    #locate-btn.locating svg { animation: spin 0.8s linear infinite; }
+
     @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.3s ease both; }
     @keyframes pulse { 0%{transform:scale(1);opacity:0.6} 70%{transform:scale(2.5);opacity:0} 100%{transform:scale(2.5);opacity:0} }
     /* gentle pop-in for map markers so they don't snap in */
     @keyframes markerPop { from { opacity:0; transform:scale(0.4); } to { opacity:1; transform:scale(1); } }
     .map-blob { animation: markerPop 0.32s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+    /* loading bar on the sheet while refetching */
+    @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(400%); } }
+    #sheet-loader {
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      overflow: hidden; border-radius: 3px 3px 0 0;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    #sheet-loader::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent 0%, var(--black) 50%, transparent 100%);
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+    .map-loading #sheet-loader { opacity: 1; }
 
     .reviews-label { font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:10px; }
     .review-card { border:var(--border);border-radius:16px;box-shadow:var(--shadow-sm);background:#fff;padding:12px 14px;margin-bottom:10px; }
@@ -266,11 +351,34 @@
     .review-name { font-size:13px;font-weight:700;color:var(--black); }
     .review-stars { font-size:11px;color:#E8930A;font-weight:700; }
     .review-text { font-size:13px;color:#555;line-height:1.55;font-weight:500; }
+
+    .tags-label { font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:10px; }
+    .tags-wrap { display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px; }
+    .tag-pill {
+      display:inline-flex;align-items:center;gap:5px;
+      padding:5px 11px;border-radius:99px;
+      border:var(--border);box-shadow:var(--shadow-sm);
+      font-size:12px;font-weight:700;color:var(--black);
+      white-space:nowrap;
+    }
   </style>
 </head>
 <body>
 
 <div id="map"></div>
+
+<div id="map-controls">
+  <button id="zoom-in" title="Zoom in">+</button>
+  <button id="zoom-out" title="Zoom out">−</button>
+  <div class="map-ctrl-divider"></div>
+  <button id="locate-btn" title="Go to my location">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+      <circle cx="12" cy="12" r="7"/>
+    </svg>
+  </button>
+</div>
 
 <div id="topbar">
   <div style="flex:1">
@@ -345,6 +453,7 @@
 </div>
 
 <div id="sheet" class="collapsed">
+  <div id="sheet-loader"></div>
   <div class="handle-wrap" id="sheet-handle">
     <div class="handle"></div>
   </div>
@@ -352,10 +461,18 @@
     <span class="sheet-label">Nearby picks</span>
     <span id="place-count" class="sheet-count"></span>
   </div>
-  <div id="cards"></div>
+  <div style="position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;">
+    <button id="cards-prev" class="cards-scroll-btn hidden">‹</button>
+    <div id="cards"></div>
+    <button id="cards-next" class="cards-scroll-btn">›</button>
+  </div>
 </div>
 
+<div id="detail-backdrop" onclick="closeDetail()"></div>
 <div id="detail">
+  <div class="detail-drag-handle" id="detail-handle">
+    <div class="handle"></div>
+  </div>
   <div class="detail-hero" id="d-hero">
     <img id="d-photo" class="detail-hero-img" src="" alt=""/>
     <div class="detail-hero-overlay"></div>
@@ -378,6 +495,7 @@
       <span id="d-address-text"></span>
     </div>
     <p id="d-desc" class="detail-desc"></p>
+    <div id="d-reviews" style="margin-bottom:12px"></div>
     <div id="d-hours-block" class="hours-block" style="display:none;margin-bottom:16px">
       <div id="d-hours-toggle" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
         <span class="hours-block-label" style="margin-bottom:0">Opening Hours</span>
@@ -385,7 +503,6 @@
       </div>
       <div id="d-hours-list" style="display:none;margin-top:10px"></div>
     </div>
-    <div id="d-reviews" style="margin-bottom:22px"></div>
     <a id="d-gmaps" class="cta-btn primary" href="#" target="_blank">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
@@ -446,6 +563,40 @@ const BLOBS = [
 
 const AVATAR_COLORS = ['#FF3D00','#7B2FFF','#FF9500','#00B4FF','#00D68F','#FF00C8','#FFD600','#FF4D6D'];
 
+const TAG_DEFS = [
+  // Cost — exclusive (only the highest-voted wins per place)
+  { id:'free',         label:'Free entry',        emoji:'💸', color:'#D4F5E2', dimension:'cost',        exclusive:true,  keywords:['free','no charge','gratis','kostenlos','free entry','no fee','frei','umsonst'] },
+  { id:'cheap',        label:'Budget-friendly',   emoji:'🪙', color:'#FFF3CD', dimension:'cost',        exclusive:true,  keywords:['cheap','affordable','inexpensive','budget','good value','günstig','preiswert','€2','€3','€4'] },
+  { id:'expensive',    label:'Pricey',            emoji:'🏷️', color:'#FFE0E0', dimension:'cost',        exclusive:true,  keywords:['expensive','overpriced','pricey','teuer','not cheap','costly','zu teuer'] },
+  // Atmosphere — exclusive
+  { id:'quiet',        label:'Quiet & calm',      emoji:'🤫', color:'#E8F4F8', dimension:'atmosphere',  exclusive:true,  keywords:['quiet','calm','peaceful','serene','relaxed','still','ruhig','leise','entspannt'] },
+  { id:'lively',       label:'Lively',            emoji:'🔊', color:'#FFF0D4', dimension:'atmosphere',  exclusive:true,  keywords:['loud','lively','busy','crowded','noisy','bustling','laut','voll','lebhaft'] },
+  // Social fit — additive (can both appear)
+  { id:'solo',         label:'Good for solo',     emoji:'🧍', color:'#EDE7F6', dimension:'social',      exclusive:false, keywords:['alone','solo','by myself','on my own','single','alleine','quiet corner'] },
+  { id:'social',       label:'Great with others', emoji:'👥', color:'#E3F2FD', dimension:'social',      exclusive:false, keywords:['group','friends','social','people','community','together','meetup','gruppe'] },
+  // Environment — additive
+  { id:'outdoor',      label:'Outdoors',          emoji:'☀️', color:'#F0F7E6', dimension:'environment', exclusive:false, keywords:['outside','outdoor','garden','park','fresh air','terrace','balcony','open air','draußen','terrasse'] },
+  { id:'indoor',       label:'Indoors',           emoji:'🏠', color:'#F5F5F5', dimension:'environment', exclusive:false, keywords:['inside','indoor','cosy','cozy','warm','shelter','drinnen','innen','gemütlich'] },
+  // Utility — additive
+  { id:'workfriendly', label:'Work-friendly',     emoji:'💻', color:'#E8F5E9', dimension:'utility',     exclusive:false, keywords:['wifi','laptop','work','study','power outlet','steckdose','arbeiten','studieren','wlan'] },
+  { id:'weather',      label:'Weather-dependent', emoji:'🌧️', color:'#E1F5FE', dimension:'utility',     exclusive:false, keywords:['rain','weather','sunny','sun','wind','regen','wetter','sommer','winter','outdoor'] },
+  { id:'active',       label:'Active',            emoji:'🏃', color:'#FFF8E1', dimension:'utility',     exclusive:false, keywords:['run','swim','exercise','sport','bike','cycle','hike','active','laufen','schwimmen','sport'] },
+  { id:'cash_only',    label:'Cash only',         emoji:'💵', color:'#FFF3E0', dimension:'utility',     exclusive:false, keywords:['cash only','cash only','nur bar','barzahlung','kein kartenlesegerät','no card'] },
+  { id:'card',         label:'Card payments',     emoji:'💳', color:'#E8EAF6', dimension:'utility',     exclusive:false, keywords:['card','credit','debit','contactless','visa','mastercard','kartenzahlung','ec-karte'] },
+  { id:'parking',      label:'Parking nearby',    emoji:'🅿️', color:'#F3E5F5', dimension:'utility',     exclusive:false, keywords:['parking','parkplatz','park nearby','car park','parken','stellplatz'] },
+];
+
+const CAT_TAG_DEFAULTS = {
+  cafe:      { cost:'cheap',    atmosphere:'quiet',  environment:'indoor',  social:null,     utility:['workfriendly'] },
+  park:      { cost:'free',     atmosphere:null,     environment:'outdoor', social:null,     utility:['weather','active'] },
+  library:   { cost:'free',     atmosphere:'quiet',  environment:'indoor',  social:'solo',   utility:['workfriendly'] },
+  museum:    { cost:null,       atmosphere:'quiet',  environment:'indoor',  social:'solo',   utility:[] },
+  jobcenter: { cost:'free',     atmosphere:null,     environment:'indoor',  social:'solo',   utility:[] },
+  mensa:     { cost:'cheap',    atmosphere:null,     environment:'indoor',  social:'social', utility:[] },
+  gym:       { cost:null,       atmosphere:null,     environment:'indoor',  social:null,     utility:['active'] },
+  pool:      { cost:null,       atmosphere:null,     environment:'outdoor', social:null,     utility:['active','weather'] },
+};
+
 // ── STATE ──
 let map, GPlace;
 let allPlaces = [], customMarkers = {}, activeFilter = 'all', sheetOpen = false;
@@ -482,8 +633,6 @@ async function initMap() {
     center: ALEX,
     zoom: 13,
     disableDefaultUI: true,
-    zoomControl: true,
-    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_TOP },
     styles: [
       { elementType: 'geometry', stylers: [{ color: '#F0EBE3' }] },
       { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
@@ -550,7 +699,7 @@ function maybeRefetch() {
   const center = { lat: c.lat(), lng: c.lng() };
   if (distMeters(center, lastSearchCenter) < 2500) return;  // not far enough to bother
   searchCenter = center;
-  fetchFromPlaces();
+  fetchFromPlaces(true);
 }
 
 // ── USER LOCATION ──
@@ -647,9 +796,13 @@ function convertPlace(place, type) {
   };
 }
 
-async function fetchFromPlaces() {
+async function fetchFromPlaces(isRefetch = false) {
   fetching = true;
   showLoader(true);
+  const mapDiv = map?.getDiv();
+
+  if (isRefetch && mapDiv) mapDiv.classList.add('map-loading');
+
   try {
     const accum = [], seen = new Set();
     let got = false;
@@ -664,9 +817,11 @@ async function fetchFromPlaces() {
         applyMarkerVisibility(activeFilter);
       }
     }));
-    if (got) buildCards(activeFilter);   // cards once, at the end (avoids flicker)
+    if (got) buildCards(activeFilter);
     lastSearchCenter = { ...searchCenter };
   } catch(e) { /* keep fallback */ }
+
+  if (mapDiv) mapDiv.classList.remove('map-loading');
   showLoader(false);
   fetching = false;
 }
@@ -828,11 +983,116 @@ function applyMarkerVisibility(cat) {
 
 // ── SHEET ──
 function expandSheet() { document.getElementById('sheet').classList.remove('collapsed'); sheetOpen = true; }
-document.getElementById('sheet-handle').addEventListener('click', () => {
-  const s = document.getElementById('sheet');
-  sheetOpen ? s.classList.add('collapsed') : s.classList.remove('collapsed');
-  sheetOpen = !sheetOpen;
-});
+function collapseSheet() { document.getElementById('sheet').classList.add('collapsed'); sheetOpen = false; }
+
+(function setupSheetHandle() {
+  const handle = document.getElementById('sheet-handle');
+  const sheet  = document.getElementById('sheet');
+  let touchStartY = 0, touchDeltaY = 0, isTouchDrag = false;
+
+  // Desktop: plain click toggle
+  handle.addEventListener('click', e => {
+    if (isTouchDrag) return; // don't fire after a drag
+    if (window.matchMedia('(pointer: fine)').matches) {
+      sheetOpen ? collapseSheet() : expandSheet();
+    }
+  });
+
+  // Mobile: touch drag
+  handle.addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+    touchDeltaY = 0;
+    isTouchDrag = false;
+  }, { passive: true });
+
+  handle.addEventListener('touchmove', e => {
+    touchDeltaY = e.touches[0].clientY - touchStartY;
+    if (Math.abs(touchDeltaY) > 8) isTouchDrag = true;
+  }, { passive: true });
+
+  handle.addEventListener('touchend', () => {
+    if (!isTouchDrag) {
+      // tiny tap — toggle as fallback
+      sheetOpen ? collapseSheet() : expandSheet();
+      return;
+    }
+    if (touchDeltaY < -40) expandSheet();
+    else if (touchDeltaY > 40) collapseSheet();
+    // else snap back (no change)
+    isTouchDrag = false;
+  });
+})();
+
+// ── DETAIL SWIPE-TO-DISMISS (mobile) ──
+(function setupDetailSwipe() {
+  const detail = document.getElementById('detail');
+  const dragHandle = document.getElementById('detail-handle');
+  let startY = 0, deltaY = 0, dragging = false;
+
+  function onStart(clientY) { startY = clientY; deltaY = 0; dragging = false; }
+  function onMove(clientY) {
+    deltaY = clientY - startY;
+    if (Math.abs(deltaY) > 8) dragging = true;
+    if (dragging && deltaY > 0) {
+      detail.style.transform = `translateY(${deltaY}px)`;
+      detail.style.transition = 'none';
+    }
+  }
+  function onEnd() {
+    detail.style.transition = '';
+    detail.style.transform = '';
+    if (dragging && deltaY > 80) closeDetail();
+    dragging = false;
+  }
+
+  dragHandle.addEventListener('touchstart', e => onStart(e.touches[0].clientY), { passive: true });
+  dragHandle.addEventListener('touchmove',  e => { e.preventDefault(); onMove(e.touches[0].clientY); }, { passive: false });
+  dragHandle.addEventListener('touchend',   onEnd);
+})();
+
+// ── SCROLL BUTTONS ──
+(function setupScrollButtons() {
+  const cards   = document.getElementById('cards');
+  const btnPrev = document.getElementById('cards-prev');
+  const btnNext = document.getElementById('cards-next');
+
+  function updateButtons() {
+    btnPrev.classList.toggle('hidden', cards.scrollLeft <= 10);
+    btnNext.classList.toggle('hidden', cards.scrollLeft + cards.clientWidth >= cards.scrollWidth - 10);
+  }
+
+  btnPrev.addEventListener('click', () => { cards.scrollBy({ left: -300, behavior: 'smooth' }); });
+  btnNext.addEventListener('click', () => { cards.scrollBy({ left:  300, behavior: 'smooth' }); });
+  cards.addEventListener('scroll', updateButtons, { passive: true });
+
+  // Also update whenever cards are rebuilt
+  const origBuildCards = buildCards;
+  window.buildCards = function(...args) { origBuildCards(...args); requestAnimationFrame(updateButtons); };
+
+  // Drag-to-scroll with mouse (desktop)
+  let isDragging = false, dragStartX = 0, dragScrollLeft = 0, didDrag = false;
+  cards.addEventListener('mousedown', e => {
+    isDragging = true; didDrag = false;
+    dragStartX = e.pageX - cards.offsetLeft;
+    dragScrollLeft = cards.scrollLeft;
+    cards.style.cursor = 'grabbing';
+    cards.style.userSelect = 'none';
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.pageX - cards.offsetLeft - dragStartX;
+    if (Math.abs(dx) > 4) didDrag = true;
+    cards.scrollLeft = dragScrollLeft - dx;
+  });
+  window.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    cards.style.cursor = '';
+    cards.style.userSelect = '';
+  });
+  // Prevent card click from firing after a drag
+  cards.addEventListener('click', e => { if (didDrag) { e.stopPropagation(); didDrag = false; } }, true);
+})();
 
 // ── DETAIL ──
 async function openDetail(p) {
@@ -865,8 +1125,9 @@ async function openDetail(p) {
     document.getElementById('d-hours-block').style.display = 'none';
   }
 
-  renderReviews(p.reviews);
+  renderTags(deriveTagsFromReviews(p.reviews, p.type));
   document.getElementById('detail').classList.add('open');
+  document.getElementById('detail-backdrop').classList.add('open');
   document.body.classList.add('detail-open');
 
   // Fetch full details from Places API if not already loaded
@@ -907,7 +1168,7 @@ async function openDetail(p) {
           text: (typeof r.text === 'string' ? r.text : r.text?.text) || '',
           stars: r.rating,
         }));
-        renderReviews(p.reviews);
+        renderTags(deriveTagsFromReviews(p.reviews, p.type));
       }
       if (place.rating) {
         p.stars = place.rating;
@@ -938,27 +1199,128 @@ document.getElementById('d-hours-toggle').addEventListener('click', () => {
   chevron.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
 });
 
-function renderReviews(reviews) {
+function deriveTagsFromReviews(reviews, type) {
+  const byId = Object.fromEntries(TAG_DEFS.map(t => [t.id, t]));
+  const defaults = CAT_TAG_DEFAULTS[type] || {};
+
+  // No reviews → show category defaults only
+  if (!reviews || reviews.length === 0) {
+    const result = [];
+    for (const [dim, val] of Object.entries(defaults)) {
+      if (dim === 'utility') {
+        (Array.isArray(val) ? val : [val]).forEach(id => { if (id && byId[id]) result.push(byId[id]); });
+      } else if (val && byId[val]) {
+        result.push(byId[val]);
+      }
+    }
+    return result.slice(0, 5);
+  }
+
+  // Count keyword votes across all review text
+  const votes = {};
+  TAG_DEFS.forEach(t => { votes[t.id] = 0; });
+  const allText = reviews.map(r => (r.text || '').toLowerCase()).join(' ');
+  TAG_DEFS.forEach(t => {
+    t.keywords.forEach(kw => { if (allText.includes(kw.toLowerCase())) votes[t.id]++; });
+  });
+
+  const result = [];
+
+  // Exclusive dimensions: only the winner per dimension
+  const exclusiveDims = [...new Set(TAG_DEFS.filter(t => t.exclusive).map(t => t.dimension))];
+  exclusiveDims.forEach(dim => {
+    const candidates = TAG_DEFS.filter(t => t.dimension === dim && t.exclusive);
+    const winner = candidates.reduce((best, t) => votes[t.id] > votes[best.id] ? t : best, candidates[0]);
+    if (votes[winner.id] > 0) result.push(winner);
+  });
+
+  // Additive tags: include any that got at least 1 vote
+  TAG_DEFS.filter(t => !t.exclusive && votes[t.id] > 0).forEach(t => result.push(t));
+
+  // Fill any dimension still uncovered using category defaults
+  for (const [dim, val] of Object.entries(defaults)) {
+    if (dim === 'utility') {
+      (Array.isArray(val) ? val : [val]).forEach(id => {
+        if (id && byId[id] && !result.find(r => r.id === id)) result.push(byId[id]);
+      });
+    } else if (val && byId[val]) {
+      const alreadyCovered = result.some(r => r.dimension === dim);
+      if (!alreadyCovered) result.push(byId[val]);
+    }
+  }
+
+  // Sort by dimension priority and cap at 5
+  const dimOrder = ['cost','atmosphere','social','environment','utility'];
+  result.sort((a, b) => dimOrder.indexOf(a.dimension) - dimOrder.indexOf(b.dimension));
+  return result.slice(0, 5);
+}
+
+function renderTags(tags) {
   const el = document.getElementById('d-reviews');
-  if (!reviews?.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `<div class="reviews-label">What people say</div>` +
-    reviews.map((r, i) => `
-      <div class="review-card">
-        <div class="review-top">
-          <div class="review-avatar" style="background:${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${r.avatar || r.name[0]}</div>
-          <div>
-            <div class="review-name">${r.name}</div>
-            <div class="review-stars">${'★'.repeat(r.stars)}</div>
-          </div>
-        </div>
-        <div class="review-text">"${r.text}"</div>
-      </div>`).join('');
+  if (!tags || !tags.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="tags-label">Why go?</div><div class="tags-wrap">` +
+    tags.map(t => `<span class="tag-pill">${t.emoji} ${t.label}</span>`).join('') +
+    `</div>`;
 }
 
 function closeDetail() {
   document.getElementById('detail').classList.remove('open');
+  document.getElementById('detail-backdrop').classList.remove('open');
   document.body.classList.remove('detail-open');
 }
+
+// ── ZOOM BUTTONS ──
+document.getElementById('zoom-in').addEventListener('click', () => { if (map) map.setZoom(map.getZoom() + 1); });
+document.getElementById('zoom-out').addEventListener('click', () => { if (map) map.setZoom(map.getZoom() - 1); });
+
+// ── LOCATE BUTTON ──
+(function setupLocateBtn() {
+  const btn = document.getElementById('locate-btn');
+
+  btn.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      showLocateError('Location not supported on this device');
+      return;
+    }
+    btn.classList.add('locating');
+    btn.classList.remove('active');
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        userLoc = { lat, lng };
+        searchCenter = { lat, lng };
+        map.panTo({ lat, lng });
+        map.setZoom(15);
+        btn.classList.remove('locating');
+        btn.classList.add('active');
+        // Remove active state when user pans away
+        map.addListenerOnce('dragstart', () => btn.classList.remove('active'));
+      },
+      err => {
+        btn.classList.remove('locating');
+        const msg = err.code === 1
+          ? 'Location access denied. Enable it in your browser settings.'
+          : 'Could not get your location. Try again.';
+        showLocateError(msg);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  });
+
+  function showLocateError(msg) {
+    let toast = document.getElementById('locate-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'locate-toast';
+      toast.style.cssText = 'position:fixed;bottom:230px;right:16px;z-index:60;background:#111;color:#fff;font-size:12px;font-weight:700;padding:10px 14px;border-radius:12px;max-width:220px;line-height:1.4;box-shadow:3px 3px 0 rgba(0,0,0,0.3)';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+  }
+})();
 
 // ── RENDER ──
 function renderAll() { syncMarkers(); applyMarkerVisibility(activeFilter); buildCards(activeFilter); }
