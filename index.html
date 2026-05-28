@@ -949,10 +949,10 @@ function setVibe(vibeId) {
     btn.classList.toggle('active', on);
   });
 
-  applyFilters();
+  applyFilters(true); // fit map on user-initiated vibe change
 }
 
-function applyFilters() {
+function applyFilters(fitMap = false) {
   const visible = allPlaces.filter(matchesVibe);
 
   // Show/hide markers
@@ -963,8 +963,8 @@ function applyFilters() {
   // Rebuild cards
   buildCards(visible);
 
-  // Fit map to visible places
-  if (visible.length > 1 && map) {
+  // Only fit map bounds when user explicitly selects a vibe, not on data refresh
+  if (fitMap && visible.length > 1 && map) {
     const bounds = new google.maps.LatLngBounds();
     visible.forEach(p => bounds.extend({ lat: p.lat, lng: p.lng }));
     map.fitBounds(bounds, 80);
