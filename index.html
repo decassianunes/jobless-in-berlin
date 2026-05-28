@@ -591,6 +591,8 @@ function updateLayout() {
   cats.style.top = topbarH + 'px';
   const catsH    = cats.offsetHeight;
   controls.style.top = (topbarH + catsH + 12) + 'px';
+  // --nav-height drives the expanded sheet height so it reaches up to (not under) the nav
+  document.documentElement.style.setProperty('--nav-height', (topbarH + catsH) + 'px');
 }
 window.addEventListener('resize', updateLayout);
 // Run after DOM ready, after first paint, and after fonts load — covers all timing edge cases
