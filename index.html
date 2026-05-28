@@ -397,7 +397,6 @@
   <button class="vibe-pill" data-vibe="linkedin" onclick="setVibe('linkedin')">💻 Linkedin focus</button>
   <button class="vibe-pill" data-vibe="sun"      onclick="setVibe('sun')">☀️ Finally some sun</button>
   <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')">🏃 Sweat the anxiety</button>
-  <button class="vibe-pill" data-vibe="humans"   onclick="setVibe('humans')">👥 I need humans</button>
   <button class="vibe-pill" data-vibe="germany"  onclick="setVibe('germany')">🏛️ Germany said so</button>
   <button class="vibe-pill" data-vibe="mensa"    onclick="setVibe('mensa')">🍽️ Eat like a student (again)</button>
 </div>
@@ -542,7 +541,7 @@ const CAT_TAG_DEFAULTS = {
   library:   { cost:'free',     atmosphere:'quiet',  environment:'indoor',  social:'solo',   utility:['workfriendly'] },
   museum:    { cost:null,       atmosphere:'quiet',  environment:'indoor',  social:'solo',   utility:[] },
   jobcenter: { cost:'free',     atmosphere:null,     environment:'indoor',  social:'solo',   utility:[] },
-  mensa:     { cost:'cheap',    atmosphere:null,     environment:'indoor',  social:'social', utility:[] },
+  mensa:     { cost:'cheap',    atmosphere:null,     environment:'indoor',  social:null,     utility:[] },
   gym:       { cost:null,       atmosphere:null,     environment:'indoor',  social:null,     utility:['active'] },
   pool:      { cost:null,       atmosphere:null,     environment:'outdoor', social:null,     utility:['active','weather'] },
 };
@@ -554,7 +553,6 @@ const VIBE_MAP = {
   linkedin: { tags: ['workfriendly'] },
   sun:      { tags: ['outdoor', 'weather'] },
   sweat:    { tags: ['active'] },
-  humans:   { tags: ['social'] },
   germany:  { type: 'jobcenter' },
   mensa:    { type: 'mensa' },
 };
