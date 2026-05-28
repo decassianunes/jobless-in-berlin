@@ -706,7 +706,7 @@ const SEARCH_CONFIGS = [
 const PLACE_FIELDS = ['displayName','location','rating','photos',
                       'regularOpeningHours','formattedAddress',
                       'userRatingCount','id',
-                      'priceLevel','outdoorSeating','goodForGroups','paymentOptions'];
+                      'priceLevel','paymentOptions'];
 
 async function searchCategory(cfg) {
   try {
@@ -758,8 +758,6 @@ function convertPlace(place, type) {
     detailLoaded: false,
     gmUrl: place.googleMapsURI || `https://www.google.com/maps/place/?q=place_id:${place.id}`,
     priceLevel: place.priceLevel || null,
-    outdoorSeating: place.outdoorSeating || false,
-    goodForGroups: place.goodForGroups || false,
     paymentOptions: place.paymentOptions || null,
     tags: [],
   };
@@ -840,7 +838,7 @@ function useFallback() {
       reviews: [],
       detailLoaded: false,
       gmUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' Berlin')}`,
-      priceLevel: null, outdoorSeating: false, goodForGroups: false, paymentOptions: null,
+      priceLevel: null, paymentOptions: null,
       tags: [],
     };
   });
@@ -1196,12 +1194,10 @@ function deriveTagsFromReviews(reviews, type, placeData = {}) {
   // ── TIER 1: Official API fields — confirmed facts, override everything ──
   const tier1 = {}; // dimension → tagId
   const tier1Utility = new Set(); // utility tags forced by API
-  const { priceLevel, outdoorSeating, goodForGroups, paymentOptions } = placeData;
+  const { priceLevel, paymentOptions } = placeData;
   if (priceLevel === 'FREE')                        tier1.cost = 'free';
   else if (priceLevel === 'INEXPENSIVE')            tier1.cost = 'cheap';
   else if (priceLevel === 'EXPENSIVE' || priceLevel === 'VERY_EXPENSIVE') tier1.cost = 'expensive';
-  if (outdoorSeating)                               tier1.environment = 'outdoor';
-  if (goodForGroups)                                tier1.social = 'social';
   if (paymentOptions?.acceptsCashOnly)              tier1Utility.add('cash_only');
   if (paymentOptions?.acceptsCreditCards || paymentOptions?.acceptsDebitCards) tier1Utility.add('card');
 
