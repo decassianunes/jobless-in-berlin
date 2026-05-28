@@ -956,7 +956,7 @@ function setVibe(vibeId) {
     btn.classList.toggle('active', on);
   });
 
-  applyFilters(true); // fit map on user-initiated vibe change
+  applyFilters(); // markers + cards update; map stays where the user is
 }
 
 function applyFilters(fitMap = false) {
