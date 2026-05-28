@@ -772,19 +772,29 @@ async function fetchFromPlaces(isRefetch = false) {
 
   try {
     const accum = [], seen = new Set();
-    let got = false;
-    // Render markers progressively as each category resolves — feels alive
-    await Promise.all(SEARCH_CONFIGS.map(async cfg => {
-      const ps = await searchCategory(cfg);
-      ps.forEach(p => { if (!seen.has(p.id)) { seen.add(p.id); accum.push(p); } });
-      if (ps.length) {
-        got = true;
+    let renderTimer = null;
+    const scheduleRender = () => {
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(() => {
         allPlaces = accum.slice();
         syncMarkers();
         applyFilters();
-      }
+      }, 120);
+    };
+
+    await Promise.all(SEARCH_CONFIGS.map(async cfg => {
+      const ps = await searchCategory(cfg);
+      ps.forEach(p => { if (!seen.has(p.id)) { seen.add(p.id); accum.push(p); } });
+      if (ps.length) scheduleRender();
     }));
-    if (got) applyFilters();
+
+    // Final render after all categories done
+    clearTimeout(renderTimer);
+    if (accum.length) {
+      allPlaces = accum.slice();
+      syncMarkers();
+      applyFilters();
+    }
     lastSearchCenter = { ...searchCenter };
   } catch(e) { /* keep fallback */ }
 
