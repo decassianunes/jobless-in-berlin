@@ -35,11 +35,11 @@
       position: fixed; top: 0; left: 0; right: 0; z-index: 30;
       background: #F5F0EB;
       border-bottom: var(--border);
-      padding: 14px 16px 12px;
-      display: flex; align-items: center; gap: 10px;
+      padding: 16px 16px 14px;
+      display: flex; align-items: flex-start; gap: 10px;
     }
     #topbar h1 { font-size: 26px; font-weight: 800; color: var(--black); letter-spacing: -0.5px; line-height: 1.1; }
-    #topbar p  { font-size: 11px; font-weight: 600; color: #999; margin-top: 2px; }
+    #topbar p  { font-size: 12px; font-weight: 500; color: #888; margin-top: 5px; line-height: 1.45; max-width: 520px; }
 
     .loader-ring {
       width: 28px; height: 28px; border-radius: 50%;
@@ -50,8 +50,8 @@
 
     /* ── CATEGORY TILES ── */
     #cats {
-      position: fixed; top: 72px; left: 0; right: 0; z-index: 30;
-      display: flex; gap: 6px; padding: 8px 16px;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 30; /* top set dynamically by updateLayout() */
+      display: flex; gap: 8px; padding: 10px 16px;
       overflow-x: auto; background: #F5F0EB;
       border-bottom: var(--border);
     }
@@ -60,7 +60,7 @@
     .vibe-pill {
       flex-shrink: 0;
       display: inline-flex; align-items: center;
-      padding: 6px 14px;
+      padding: 8px 16px;
       border: var(--border);
       border-radius: 99px;
       background: white;
@@ -95,7 +95,7 @@
     .handle { width: 40px; height: 4px; border-radius: 2px; background: var(--black); margin: 0 auto; }
 
     .sheet-header { padding: 10px 16px 2px; display: flex; align-items: center; justify-content: space-between; }
-    .sheet-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .08em; }
+    .sheet-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .sheet-count { font-size: 11px; font-weight: 700; color: #888; }
 
     /* ── CARDS ── */
@@ -304,7 +304,7 @@
 
     /* ── MAP CONTROLS (zoom + locate, Google Maps style) ── */
     #map-controls {
-      position: fixed; top: 136px; right: 12px; z-index: 35;
+      position: fixed; top: 0; right: 12px; z-index: 35; /* top set dynamically by updateLayout() */
       display: flex; flex-direction: column;
       border: var(--border); border-radius: 14px;
       overflow: hidden; box-shadow: var(--shadow); background: #F5F0EB;
@@ -386,7 +386,7 @@
 <div id="topbar">
   <div style="flex:1">
     <h1>Jobless in Berlin 🇩🇪</h1>
-    <p>Places to go when you're trying to find yourself</p>
+    <p>We know that the first days after a [un] expected layoff are hard. Here is a map of the places to go and things to do when you're trying to find yourself.</p>
   </div>
   <div id="loader" class="loader-ring" style="display:none"></div>
 </div>
@@ -407,7 +407,7 @@
     <div class="handle"></div>
   </div>
   <div class="sheet-header">
-    <span class="sheet-label">Nearby picks</span>
+    <span class="sheet-label">Close to you, so no excuses!</span>
     <span id="place-count" class="sheet-count"></span>
   </div>
   <div style="position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;">
@@ -582,6 +582,23 @@ function distMeters(a, b) {
   const s = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng/2)**2;
   return 2 * R * Math.asin(Math.sqrt(s));
 }
+
+// ── LAYOUT: position #cats and #map-controls below the topbar dynamically ──
+function updateLayout() {
+  const topbarH  = document.getElementById('topbar').offsetHeight;
+  const cats     = document.getElementById('cats');
+  const controls = document.getElementById('map-controls');
+  cats.style.top = topbarH + 'px';
+  const catsH    = cats.offsetHeight;
+  controls.style.top = (topbarH + catsH + 12) + 'px';
+}
+window.addEventListener('resize', updateLayout);
+// Run after DOM ready, after first paint, and after fonts load — covers all timing edge cases
+document.addEventListener('DOMContentLoaded', () => {
+  updateLayout();
+  requestAnimationFrame(updateLayout);
+});
+document.fonts.ready.then(updateLayout);
 
 // ── GOOGLE MAPS INIT ──
 async function initMap() {
