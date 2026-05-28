@@ -875,12 +875,13 @@ function syncMarkers() {
 // ── CARDS ──
 function buildCards(filter) {
   const el = document.getElementById('cards');
-  el.innerHTML = '';
   // Accept either an array of places or a legacy filter string
   const list = Array.isArray(filter) ? filter
     : (filter === 'all' ? allPlaces : allPlaces.filter(p => p.type === filter));
   document.getElementById('place-count').textContent = `${list.length} places`;
   if (!list.length) { el.innerHTML = '<p style="padding:12px 4px;font-size:13px;color:#888;font-weight:600;">No places found</p>'; return; }
+  // Build into a fragment first, then swap in one atomic operation — no empty flash
+  const frag = document.createDocumentFragment();
 
   list.forEach((p, i) => {
     const blob = BLOBS[hashStr(p.id) % BLOBS.length];
@@ -916,12 +917,14 @@ function buildCards(filter) {
       </div>`;
 
     card.addEventListener('click', () => {
-      map.panTo({ lat: p.lat, lng: p.lng });
-      map.setZoom(16);
+      if (map) { map.panTo({ lat: p.lat, lng: p.lng }); map.setZoom(16); }
       openDetail(p);
     });
-    el.appendChild(card);
+    frag.appendChild(card);
   });
+  // Atomic swap — replaces all old cards in one paint, no empty-frame flash
+  el.innerHTML = '';
+  el.appendChild(frag);
 }
 
 function scrollToCard(id) {
