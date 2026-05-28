@@ -2,3 +2,6 @@
 *.swp
 .vscode/
 .idea/
+
+# Claude local settings (preview config is OK to commit, local settings aren't)
+.claude/settings.local.json
