@@ -77,6 +77,57 @@
       .vibe-pill:not(.active):hover { background: #f0ebe4; }
     }
 
+    /* ── SEARCH ── */
+    #search-toggle {
+      position: sticky; right: 0;
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 8px 14px;
+      border: var(--border); border-radius: 99px;
+      background: white; font-size: 14px;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #111;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+      user-select: none;
+    }
+    #search-toggle:active { transform: translate(2px,2px); box-shadow: none; }
+    @media (hover: hover) { #search-toggle:hover { background: #f0ebe4; } }
+
+    #search-bar {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 31;
+      align-items: center; gap: 8px;
+      padding: 10px 16px;
+      background: #F5F0EB; border-bottom: var(--border);
+    }
+    #search-bar.open { display: flex; }
+    #search-input {
+      flex: 1; height: 38px; padding: 0 14px;
+      border: var(--border); border-radius: 99px;
+      background: white; font-family: inherit;
+      font-size: 14px; font-weight: 600; color: var(--black);
+      box-shadow: var(--shadow-sm); outline: none;
+      transition: box-shadow 0.15s;
+    }
+    #search-input:focus { box-shadow: var(--shadow); }
+    #search-input::placeholder { color: #bbb; font-weight: 500; }
+    #search-clear {
+      flex-shrink: 0; width: 38px; height: 38px;
+      border: var(--border); border-radius: 99px;
+      background: white; box-shadow: var(--shadow-sm);
+      font-size: 16px; font-weight: 800; cursor: pointer; color: var(--black);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+    #search-clear:active { transform: translate(2px,2px); box-shadow: none; }
+    @media (hover: hover) { #search-clear:hover { background: var(--black); color: white; } }
+
+    body.dark #search-bar { background: #1A1714; }
+    body.dark #search-input { background: #2A2521; color: #F0EBE3; }
+    body.dark #search-input::placeholder { color: #666; }
+    body.dark #search-clear { background: #2A2521; color: #F0EBE3; }
+    body.dark #search-toggle { background: #2A2521; color: #F0EBE3; }
+
     /* ── BOTTOM SHEET ── */
     #sheet {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
@@ -456,6 +507,12 @@
   <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')">🏃 Sweat the anxiety</button>
   <button class="vibe-pill" data-vibe="germany"  onclick="setVibe('germany')">🏛️ Germany said so</button>
   <button class="vibe-pill" data-vibe="mensa"    onclick="setVibe('mensa')">🍽️ Eat like a student (again)</button>
+  <button id="search-toggle" onclick="openSearch()" title="Search places">🔍</button>
+</div>
+
+<div id="search-bar">
+  <input id="search-input" type="text" placeholder="Search places…" autocomplete="off" inputmode="search"/>
+  <button id="search-clear" onclick="closeSearch()">✕</button>
 </div>
 
 <div id="sheet" class="collapsed">
@@ -643,7 +700,7 @@ const VIBE_MAP = {
 
 // ── STATE ──
 let map, GPlace;
-let allPlaces = [], customMarkers = {}, activeVibe = null, sheetOpen = false;
+let allPlaces = [], customMarkers = {}, activeVibe = null, searchQuery = '', sheetOpen = false;
 let searchCenter = { lat: ALEX.lat, lng: ALEX.lng }; // where the next search is centered
 let lastSearchCenter = null;                          // where results were last loaded
 let fetching = false, idleTimer = null;
@@ -1035,7 +1092,15 @@ function scrollToCard(id) {
 }
 
 // ── FILTER ──
-function matchesVibe(p) {
+function matchesFilters(p) {
+  // Search takes priority — matches name, address, or type
+  if (searchQuery) {
+    const q = searchQuery;
+    return p.name.toLowerCase().includes(q)
+        || (p.address || '').toLowerCase().includes(q)
+        || (p.type || '').toLowerCase().includes(q);
+  }
+  // Vibe filter
   if (!activeVibe) return true;
   // Don't include hardcoded fallback places in vibe results — their locations
   // are fixed Berlin landmarks and may be far from the user's actual location.
@@ -1045,7 +1110,43 @@ function matchesVibe(p) {
   return v.tags.some(tagId => p.tags.some(t => t.id === tagId));
 }
 
+function openSearch() {
+  searchQuery = '';
+  // Clear active vibe — search and vibe are mutually exclusive
+  activeVibe = null;
+  document.querySelectorAll('.vibe-pill').forEach(b => b.classList.remove('active'));
+  // Show search bar at the same top position as #cats
+  const searchBar = document.getElementById('search-bar');
+  searchBar.style.top = document.getElementById('cats').style.top;
+  searchBar.classList.add('open');
+  document.getElementById('search-input').focus();
+  applyFilters();
+}
+
+function closeSearch() {
+  searchQuery = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-bar').classList.remove('open');
+  applyFilters();
+}
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchQuery = e.target.value.trim().toLowerCase();
+  applyFilters();
+});
+
+// Close search on Escape key
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSearch();
+});
+
 function setVibe(vibeId) {
+  // Close search if open — vibe and search are mutually exclusive
+  if (searchQuery || document.getElementById('search-bar').classList.contains('open')) {
+    searchQuery = '';
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-bar').classList.remove('open');
+  }
   // Toggle: tap same vibe again to deselect
   activeVibe = activeVibe === vibeId ? null : vibeId;
 
@@ -1058,7 +1159,7 @@ function setVibe(vibeId) {
 }
 
 function applyFilters(fitMap = false) {
-  const visible = allPlaces.filter(matchesVibe);
+  const visible = allPlaces.filter(matchesFilters);
 
   // Show/hide markers
   Object.entries(customMarkers).forEach(([id, m]) => {
