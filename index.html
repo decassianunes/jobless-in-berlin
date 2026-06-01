@@ -54,18 +54,38 @@
       display: flex; align-items: center; gap: 8px; padding: 10px 16px;
       background: #F5F0EB; border-bottom: var(--border);
     }
-    #vibes-wrap {
-      flex: 1; min-width: 0;
-      overflow: hidden;
-      -webkit-mask-image: linear-gradient(to right, black 75%, transparent 100%);
-      mask-image: linear-gradient(to right, black 75%, transparent 100%);
-    }
     #vibes-scroll {
+      flex: 1; min-width: 0;
       display: flex; gap: 8px;
       overflow-x: auto;
-      padding: 0 4px;
+      padding: 2px 0 4px; /* top/bottom padding so pill shadows aren't clipped */
     }
     #vibes-scroll::-webkit-scrollbar { display: none; }
+    #vibes-fade {
+      flex-shrink: 0;
+      width: 48px;
+      margin-left: -48px;
+      align-self: stretch;
+      background: linear-gradient(to right, transparent 0%, rgba(245,240,235,0.9) 60%);
+      position: relative; z-index: 2;
+      display: flex; align-items: center; justify-content: flex-end;
+    }
+    body.dark #vibes-fade { background: linear-gradient(to right, transparent 0%, rgba(26,23,20,0.9) 60%); }
+    #vibes-next {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border: var(--border); border-radius: 50%;
+      background: white; box-shadow: var(--shadow-sm);
+      font-size: 16px; font-weight: 800; cursor: pointer; color: var(--black);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+      line-height: 1;
+    }
+    #vibes-next:active { transform: translate(1px,1px); box-shadow: none; }
+    @media (hover: hover) { #vibes-next:hover { background: var(--black); color: white; } }
+    /* hide arrow on touch devices — they swipe naturally */
+    @media (hover: none) { #vibes-next { display: none; } }
+    body.dark #vibes-next { background: #2A2521; color: #F0EBE3; }
 
     .vibe-pill {
       flex-shrink: 0;
@@ -89,7 +109,7 @@
 
     /* ── SEARCH ── */
     /* search + saved in pills row — scroll with the row */
-    #search-toggle, #saved-toggle {
+    #search-toggle, #saved-toggle-desktop {
       flex-shrink: 0;
       height: 36px; padding: 0 14px;
       border: var(--border); border-radius: 99px;
@@ -98,24 +118,37 @@
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s, box-shadow 0.1s, transform 0.1s;
     }
-    #search-toggle:active, #saved-toggle:active { transform: translate(2px,2px); box-shadow: none; }
-    @media (hover: hover) {
-      #search-toggle:hover, #saved-toggle:hover { background: #f0ebe4; }
+    #search-toggle:active, #saved-toggle-desktop:active { transform: translate(2px,2px); box-shadow: none; }
+    @media (hover: hover) { #search-toggle:hover, #saved-toggle-desktop:hover { background: #f0ebe4; } }
+    body.dark #search-toggle, body.dark #saved-toggle-desktop { background: #2A2521; color: #F0EBE3; box-shadow: 2px 2px 0 #F0EBE3; }
+
+    /* Saved toggle — ghost style inside sheet header */
+    #saved-toggle {
+      flex-shrink: 0;
+      height: 30px; padding: 0 10px;
+      border: var(--border); border-radius: 99px;
+      background: white; box-shadow: var(--shadow-sm);
+      font-size: 12px; font-weight: 700; color: var(--black);
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+      font-family: inherit;
     }
-    body.dark #search-toggle, body.dark #saved-toggle { background: #2A2521; color: #F0EBE3; box-shadow: 2px 2px 0 #F0EBE3; }
+    #saved-toggle:active { transform: translate(2px,2px); box-shadow: none; }
+    @media (hover: hover) { #saved-toggle:hover { background: #f0ebe4; } }
+    body.dark #saved-toggle { background: #2A2521; color: #F0EBE3; box-shadow: 2px 2px 0 #F0EBE3; }
 
     /* info toggle in topbar — same style as dark-toggle */
     #info-toggle {
       flex-shrink: 0; width: 30px; height: 30px;
-      border: var(--border); border-radius: 10px;
-      background: white; box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0,0,0,0.18); border-radius: 10px;
+      background: transparent; box-shadow: none;
       font-size: 14px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+      transition: background 0.15s;
     }
-    #info-toggle:active { transform: translate(2px,2px); box-shadow: none; }
-    @media (hover: hover) { #info-toggle:hover { background: #f0ebe4; } }
-    body.dark #info-toggle { background: #2A2521; color: #F0EBE3; }
+    @media (hover: hover) { #info-toggle:hover { background: rgba(0,0,0,0.06); } }
+    body.dark #info-toggle { color: #F0EBE3; border-color: rgba(255,255,255,0.2); }
+    body.dark #info-toggle:hover { background: rgba(255,255,255,0.08); }
 
     /* info panel — slides in from right, same pattern as #detail */
     #info-backdrop {
@@ -123,17 +156,34 @@
       background: rgba(0,0,0,0.25);
     }
     #info-backdrop.open { display: block; }
+    /* Mobile: bottom sheet */
     #info-panel {
-      position: fixed; top: 0; right: 0; bottom: 0;
-      width: min(400px, 100vw); z-index: 50;
-      background: #F5F0EB; border-left: var(--border);
-      box-shadow: -4px 0 20px rgba(0,0,0,0.12);
-      transform: translateX(100%);
-      transition: transform 0.3s ease;
-      padding: 24px 20px;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 50dvh; z-index: 50;
+      background: #F5F0EB;
+      border-radius: 24px 24px 0 0;
+      transform: translateY(100%);
+      transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
+      display: flex; flex-direction: column; overflow: hidden;
     }
-    #info-panel.open { transform: translateX(0); }
+    #info-panel.open { transform: translateY(0); }
+    /* Desktop: right sidebar */
+    @media (min-width: 768px) {
+      #info-panel {
+        top: 0; right: 0; bottom: 0; left: auto;
+        width: min(400px, 100vw); height: 100%;
+        border-radius: 0; border-left: var(--border);
+        transform: translateX(100%);
+        box-shadow: -4px 0 20px rgba(0,0,0,0.12);
+        padding: 24px 20px;
+      }
+      #info-panel.open { transform: translateX(0); }
+    }
     body.dark #info-panel { background: #1A1714; border-color: #444; }
+    #info-drag-handle { padding: 14px 0 6px; cursor: grab; flex-shrink: 0; text-align: center; }
+    #info-drag-handle .handle { width: 44px; height: 5px; border-radius: 99px; background: #111; opacity: 0.35; margin: 0 auto; }
+    body.dark #info-drag-handle .handle { background: #F0EBE3; }
+    @media (min-width: 768px) { #info-drag-handle { display: none; } }
 
     #search-bar {
       display: none;
@@ -186,8 +236,8 @@
 
     .handle { width: 40px; height: 4px; border-radius: 2px; background: var(--black); margin: 0 auto; }
 
-    .sheet-header { padding: 10px 16px 2px; display: flex; align-items: center; justify-content: space-between; }
-    .sheet-label { font-size: 16px; font-weight: 700; color: #888; white-space: nowrap; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .sheet-header { padding: 10px 16px 2px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .sheet-label { font-size: 16px; font-weight: 700; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
     .sheet-count { font-size: 11px; font-weight: 700; color: #888; }
 
     /* ── CARDS ── */
@@ -297,6 +347,24 @@
     @media (max-width: 767px) {
       .detail-back { display: none !important; }
       .detail-drag-handle { display: flex !important; }
+      /* Description: one line on mobile */
+      #topbar p { display: none; }
+      /* With no description, align buttons to centre vertically with the title */
+      #topbar { align-items: center; padding: 12px 16px; }
+      /* Pill emoji hidden on mobile — text only */
+      .pill-emoji { display: none; }
+      /* Handle: larger touch area on mobile */
+      .handle-wrap { padding: 18px 0 14px !important; }
+      .handle { width: 48px; height: 5px; border-radius: 3px; opacity: 0.25; }
+      /* Search: stays first (left) on mobile — no reorder needed */
+      /* Saved: show in sheet header, hide in pills row on mobile */
+      #saved-toggle-desktop { display: none !important; }
+    }
+    @media (min-width: 768px) {
+      /* Search: push to end of pills row on desktop */
+      #search-toggle { order: 99; }
+      /* Saved: show in pills row, hide in sheet header on desktop */
+      #saved-toggle { display: none !important; }
     }
     .detail-drag-handle {
       display: none;
@@ -337,16 +405,123 @@
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; font-weight: 800; font-size: 16px; color: var(--black);
     }
-    .detail-type-badge {
+    .detail-save-btn {
       position: absolute; top: 14px; right: 14px; z-index: 2;
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 6px 12px; border-radius: 99px;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%;
       border: var(--border); box-shadow: var(--shadow-sm);
-      font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
-      color: var(--black);
-      white-space: nowrap; line-height: 1;
+      background: white; cursor: pointer; font-size: 20px;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
     }
-    .detail-type-badge svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .detail-save-btn:active { transform: translate(1px,1px); box-shadow: none; }
+    @media (hover: hover) { .detail-save-btn:hover { background: #f0ebe4; } }
+    body.dark .detail-save-btn { background: #2A2521; }
+
+    /* ── SAVED PANEL ── */
+    #saved-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 49;
+      background: rgba(0,0,0,0.25);
+    }
+    #saved-backdrop.open { display: block; }
+
+    /* Mobile: bottom sheet */
+    #saved-panel {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 88dvh; z-index: 50;
+      background: #F5F0EB;
+      border-radius: 24px 24px 0 0;
+      transform: translateY(100%);
+      transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    #saved-panel.open { transform: translateY(0); }
+
+    /* Desktop: right sidebar */
+    @media (min-width: 768px) {
+      #saved-panel {
+        top: 0; right: 0; bottom: 0; left: auto;
+        width: 420px; height: 100%;
+        border-radius: 0;
+        transform: translateX(110%);
+        box-shadow: -4px 0 40px rgba(0,0,0,0.12);
+        border-left: var(--border);
+      }
+      #saved-panel.open { transform: translateX(0); }
+    }
+
+    body.dark #saved-panel { background: #1A1714; border-color: #555; border-top: 1.8px solid #555; }
+    body.dark #saved-panel-header { border-bottom-color: #555; }
+    body.dark #saved-panel-header h2 { color: #F0EBE3; }
+
+    /* Drag handle — mobile only */
+    #saved-drag-handle {
+      padding: 14px 0 6px; cursor: grab; flex-shrink: 0; text-align: center;
+    }
+    #saved-drag-handle .handle {
+      width: 44px; height: 5px; border-radius: 99px;
+      background: #111; opacity: 0.35; margin: 0 auto;
+    }
+    body.dark #saved-drag-handle .handle { background: #F0EBE3; }
+    @media (min-width: 768px) { #saved-drag-handle { display: none; } }
+
+    #saved-panel-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 20px 16px; border-bottom: var(--border);
+      flex-shrink: 0;
+    }
+    @media (min-width: 768px) {
+      #saved-panel-header { padding-top: 20px; }
+    }
+    #saved-panel-header h2 { margin: 0; font-size: 18px; font-weight: 800; }
+
+    /* Hide close button on mobile (use swipe down instead) */
+    .saved-close-btn {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
+      background: #F5F0EB; border: var(--border); box-shadow: var(--shadow-sm);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-weight: 800; font-size: 15px; color: var(--black);
+    }
+    body.dark .saved-close-btn { background: #2A2521; color: #F0EBE3; border-color: #555; }
+    @media (max-width: 767px) { .saved-close-btn { display: none; } }
+    #saved-list { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .saved-empty { text-align: center; color: #666; font-size: 14px; font-weight: 500; padding: 40px 20px; line-height: 1.6; }
+    body.dark .saved-empty { color: #bbb; }
+    .saved-card {
+      display: flex; gap: 12px; align-items: center;
+      background: white; border: var(--border); border-radius: 14px;
+      box-shadow: var(--shadow-sm); padding: 12px; cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.1s;
+    }
+    .saved-card:active { transform: translate(1px,1px); box-shadow: none; }
+    body.dark .saved-card { background: #2A2521; }
+    .saved-card-thumb {
+      width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0;
+      object-fit: cover; border: var(--border);
+    }
+    .saved-card-swatch {
+      width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; border: var(--border);
+    }
+    .saved-card-info { flex: 1; min-width: 0; }
+    .saved-card-name { font-size: 13px; font-weight: 800; color: var(--black); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .saved-card-addr { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .saved-card-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+    .visited-btn {
+      font-size: 10px; font-weight: 800; padding: 4px 8px;
+      border: var(--border); border-radius: 99px; cursor: pointer;
+      background: white; color: #888; white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .visited-btn.visited { background: #2d9a4e; color: white; border-color: #2d9a4e; }
+    body.dark .visited-btn { background: #1A1714; color: #888; }
+    body.dark .visited-btn.visited { background: #2d9a4e; color: white; border-color: #2d9a4e; }
+    .unsave-btn {
+      font-size: 10px; font-weight: 800; padding: 4px 8px;
+      border: var(--border); border-radius: 99px; cursor: pointer;
+      background: white; color: #888;
+      transition: background 0.15s, color 0.15s;
+    }
+    .unsave-btn:hover { background: #111; color: white; border-color: #111; }
+    body.dark .unsave-btn { background: #1A1714; color: #888; }
 
     .detail-body { flex: 1; overflow-y: auto; padding: 20px 18px 32px; }
     .detail-name { font-size: 26px; font-weight: 800; color: var(--black); letter-spacing: -0.5px; margin-bottom: 8px; }
@@ -460,13 +635,15 @@
     #dark-toggle {
       flex-shrink: 0;
       width: 30px; height: 30px;
-      border: var(--border); border-radius: 10px;
-      background: white; box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0,0,0,0.18); border-radius: 10px;
+      background: transparent; box-shadow: none;
       font-size: 14px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s;
     }
-    #dark-toggle:active { transform: translate(2px,2px); box-shadow: none; }
+    @media (hover: hover) { #dark-toggle:hover { background: rgba(0,0,0,0.06); } }
+    body.dark #dark-toggle { color: #F0EBE3; border-color: rgba(255,255,255,0.2); }
+    body.dark #dark-toggle:hover { background: rgba(255,255,255,0.08); }
 
     /* ── DARK MODE ── */
     body.dark {
@@ -482,7 +659,6 @@
     body.dark #detail,
     body.dark #map-controls { background: #1A1714; }
 
-    body.dark #dark-toggle { background: #2A2521; color: #F0EBE3; }
     body.dark .vibe-pill { background: #2A2521; color: #F0EBE3; }
     body.dark .vibe-pill.active { background: #F0EBE3; color: #1A1714; }
     body.dark .vibe-pill:not(.active):hover { background: #3A3530; }
@@ -504,7 +680,6 @@
 
     body.dark .handle { background: #F0EBE3; opacity: 0.4; }
 
-    body.dark .detail-type-badge { background: #2A2521 !important; color: #F0EBE3; }
     body.dark .detail-back { background: #2A2521; color: #F0EBE3; }
     body.dark .status-pill.open   { background: #1A3326; color: #4ADE80; }
     body.dark .status-pill.closed { background: #3B1A1A; color: #F87171; }
@@ -542,19 +717,20 @@
 </div>
 
 <div id="cats">
-  <div id="vibes-wrap">
-    <div id="vibes-scroll">
-      <button class="vibe-pill" data-vibe="wallet"   onclick="setVibe('wallet')">💸 Wallet is crying</button>
-      <button class="vibe-pill" data-vibe="myself"   onclick="setVibe('myself')">🧍 Me and myself</button>
-      <button class="vibe-pill" data-vibe="linkedin" onclick="setVibe('linkedin')">💻 Linkedin focus</button>
-      <button class="vibe-pill" data-vibe="sun"      onclick="setVibe('sun')">☀️ Finally some sun</button>
-      <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')">🏃 Sweat the anxiety</button>
-      <button class="vibe-pill" data-vibe="germany"  onclick="setVibe('germany')">🏛️ Germany said so</button>
-      <button class="vibe-pill" data-vibe="mensa"    onclick="setVibe('mensa')">🍽️ Eat like a student (again)</button>
-    </div>
-  </div>
   <button id="search-toggle" onclick="openSearch()" title="Search places">🔍</button>
-  <button id="saved-toggle" title="Saved places">❤️</button>
+  <div id="vibes-scroll">
+    <button class="vibe-pill" data-vibe="wallet"   onclick="setVibe('wallet')"><span class="pill-emoji">💸 </span>Wallet is crying</button>
+    <button class="vibe-pill" data-vibe="myself"   onclick="setVibe('myself')"><span class="pill-emoji">🧍 </span>Me and myself</button>
+    <button class="vibe-pill" data-vibe="linkedin" onclick="setVibe('linkedin')"><span class="pill-emoji">💻 </span>Linkedin focus</button>
+    <button class="vibe-pill" data-vibe="sun"      onclick="setVibe('sun')"><span class="pill-emoji">☀️ </span>Finally some sun</button>
+    <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')"><span class="pill-emoji">🏃 </span>Sweat the anxiety</button>
+    <button class="vibe-pill" data-vibe="germany"  onclick="setVibe('germany')"><span class="pill-emoji">🏛️ </span>Germany said so</button>
+    <button class="vibe-pill" data-vibe="mensa"    onclick="setVibe('mensa')"><span class="pill-emoji">🍽️ </span>Eat like a student (again)</button>
+  </div>
+  <div id="vibes-fade">
+    <button id="vibes-next" onclick="document.getElementById('vibes-scroll').scrollBy({left:200,behavior:'smooth'})">›</button>
+  </div>
+  <button id="saved-toggle-desktop" onclick="openSaved()" title="Saved places" style="order:100">❤️</button>
 </div>
 
 <div id="search-bar">
@@ -569,6 +745,7 @@
   </div>
   <div class="sheet-header">
     <span class="sheet-label">Close to you, so no excuses!</span>
+    <button id="saved-toggle" title="Saved places" onclick="openSaved()">Saved ❤️</button>
   </div>
   <div style="position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;">
     <button id="cards-prev" class="cards-scroll-btn hidden">‹</button>
@@ -579,7 +756,21 @@
 
 <div id="info-backdrop" onclick="closeInfo()"></div>
 <div id="info-panel">
+  <div id="info-drag-handle"><div class="handle"></div></div>
   <button class="detail-back" onclick="closeInfo()">←</button>
+  <div style="padding: 20px 24px; flex: 1; display: flex; align-items: center; justify-content: center;">
+    <p style="font-size: 14px; font-weight: 500; color: #888; text-align: center; line-height: 1.6;">More to come ✨</p>
+  </div>
+</div>
+
+<div id="saved-backdrop" onclick="closeSaved()"></div>
+<div id="saved-panel">
+  <div id="saved-drag-handle"><div class="handle"></div></div>
+  <div id="saved-panel-header">
+    <button class="saved-close-btn" onclick="closeSaved()">←</button>
+    <h2>Saved places</h2>
+  </div>
+  <div id="saved-list"></div>
 </div>
 
 <div id="detail-backdrop" onclick="closeDetail()"></div>
@@ -591,7 +782,7 @@
     <img id="d-photo" class="detail-hero-img" src="" alt=""/>
     <div class="detail-hero-overlay"></div>
     <button class="detail-back" onclick="closeDetail()">←</button>
-    <div id="d-typebadge" class="detail-type-badge"></div>
+    <button id="d-save-btn" class="detail-save-btn" onclick="toggleSave(currentPlace)"><span id="d-save-icon">🤍</span></button>
   </div>
   <div class="detail-body">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
@@ -753,6 +944,136 @@ const VIBE_MAP = {
 // ── STATE ──
 let map, GPlace;
 let allPlaces = [], customMarkers = {}, activeVibe = null, searchQuery = '', sheetOpen = false;
+let currentPlace = null;
+let savedPlaces = JSON.parse(localStorage.getItem('jib_saved') || '[]');
+let visitedIds = new Set(JSON.parse(localStorage.getItem('jib_visited') || '[]'));
+
+function persistSaved()   { localStorage.setItem('jib_saved',   JSON.stringify(savedPlaces)); }
+function persistVisited() { localStorage.setItem('jib_visited', JSON.stringify([...visitedIds])); }
+
+function isSaved(id) { return savedPlaces.some(p => p.id === id); }
+
+function toggleSave(p) {
+  if (!p) return;
+  if (isSaved(p.placeId)) {
+    savedPlaces = savedPlaces.filter(s => s.id !== p.placeId);
+  } else {
+    savedPlaces.push({ id: p.placeId, name: p.name, type: p.type,
+                       color: p.color, photo: p.photo, address: p.address });
+  }
+  persistSaved();
+  updateSaveButton(p.placeId);
+  if (document.getElementById('saved-panel').classList.contains('open')) renderSavedPanel();
+}
+
+function toggleVisited(id) {
+  visitedIds.has(id) ? visitedIds.delete(id) : visitedIds.add(id);
+  persistVisited();
+  renderSavedPanel();
+}
+
+function updateSaveButton(id) {
+  const icon = document.getElementById('d-save-icon');
+  if (icon) icon.textContent = isSaved(id) ? '❤️' : '🤍';
+}
+
+function openSaved() {
+  renderSavedPanel();
+  document.getElementById('saved-panel').classList.add('open');
+  document.getElementById('saved-backdrop').classList.add('open');
+}
+
+function closeSaved() {
+  document.getElementById('saved-panel').classList.remove('open');
+  document.getElementById('saved-backdrop').classList.remove('open');
+}
+
+// Swipe-to-dismiss for saved panel (mobile)
+(function() {
+  const panel = document.getElementById('saved-panel');
+  const handle = document.getElementById('saved-drag-handle');
+  let startY = 0, dragging = false;
+  function onStart(e) {
+    startY = e.touches[0].clientY;
+    dragging = true;
+    panel.style.transition = 'none';
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const dy = Math.max(0, e.touches[0].clientY - startY);
+    panel.style.transform = `translateY(${dy}px)`;
+  }
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    panel.style.transition = '';
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 80) { panel.style.transform = ''; closeSaved(); }
+    else { panel.style.transform = ''; }
+  }
+  handle.addEventListener('touchstart', onStart, { passive: true });
+  handle.addEventListener('touchmove',  onMove,  { passive: true });
+  handle.addEventListener('touchend',   onEnd,   { passive: true });
+})();
+
+// Swipe-to-dismiss for info panel (mobile)
+(function() {
+  const panel = document.getElementById('info-panel');
+  const handle = document.getElementById('info-drag-handle');
+  let startY = 0, dragging = false;
+  function onStart(e) { startY = e.touches[0].clientY; dragging = true; panel.style.transition = 'none'; }
+  function onMove(e) {
+    if (!dragging) return;
+    const dy = Math.max(0, e.touches[0].clientY - startY);
+    panel.style.transform = `translateY(${dy}px)`;
+  }
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    panel.style.transition = '';
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 80) { panel.style.transform = ''; closeInfo(); }
+    else { panel.style.transform = ''; }
+  }
+  handle.addEventListener('touchstart', onStart, { passive: true });
+  handle.addEventListener('touchmove',  onMove,  { passive: true });
+  handle.addEventListener('touchend',   onEnd,   { passive: true });
+})();
+
+function renderSavedPanel() {
+  const list = document.getElementById('saved-list');
+  if (!list) return;
+  if (savedPlaces.length === 0) {
+    list.innerHTML = '<p class="saved-empty">Nothing saved yet.<br>Tap ❤️ on any place to save it.</p>';
+    return;
+  }
+  list.innerHTML = savedPlaces.map(p => {
+    const thumb = p.photo
+      ? `<img class="saved-card-thumb" src="${p.photo}" alt="${p.name}">`
+      : `<div class="saved-card-swatch" style="background:${p.color || '#ccc'}"></div>`;
+    return `
+      <div class="saved-card" onclick="openPlaceById('${p.id}')">
+        ${thumb}
+        <div class="saved-card-info">
+          <div class="saved-card-name">${p.name}</div>
+          <div class="saved-card-addr">${p.address || ''}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function unsaveById(id) {
+  savedPlaces = savedPlaces.filter(p => p.id !== id);
+  persistSaved();
+  if (currentPlace && currentPlace.placeId === id) updateSaveButton(id);
+  renderSavedPanel();
+}
+
+function openPlaceById(id) {
+  closeSaved();
+  const place = allPlaces.find(p => p.placeId === id);
+  if (place) openDetail(place);
+}
 let searchCenter = { lat: ALEX.lat, lng: ALEX.lng }; // where the next search is centered
 let lastSearchCenter = null;                          // where results were last loaded
 let fetching = false, idleTimer = null;
@@ -798,7 +1119,8 @@ function updateLayout() {
   const controls = document.getElementById('map-controls');
   cats.style.top = topbarH + 'px';
   const catsH    = cats.offsetHeight;
-  controls.style.top = (topbarH + catsH + 12) + 'px';
+  const navH = topbarH + catsH;
+  controls.style.top = (navH + 12) + 'px';
   // --nav-height drives the expanded sheet height so it reaches up to (not under) the nav
   document.documentElement.style.setProperty('--nav-height', (topbarH + catsH) + 'px');
 }
@@ -807,6 +1129,26 @@ window.addEventListener('resize', updateLayout);
 document.addEventListener('DOMContentLoaded', () => {
   updateLayout();
   requestAnimationFrame(updateLayout);
+
+  // Convert vertical mouse-wheel to horizontal scroll on the pills row (desktop)
+  const vibesEl = document.getElementById('vibes-scroll');
+  vibesEl.addEventListener('wheel', (e) => {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      vibesEl.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+
+  // Show/hide the › arrow based on whether pills overflow
+  function updateVibesArrow() {
+    const btn = document.getElementById('vibes-next');
+    if (!btn) return;
+    const hasMore = vibesEl.scrollWidth > vibesEl.clientWidth + 4;
+    btn.style.display = hasMore ? '' : 'none';
+  }
+  vibesEl.addEventListener('scroll', updateVibesArrow);
+  window.addEventListener('resize', updateVibesArrow);
+  requestAnimationFrame(updateVibesArrow);
 });
 document.fonts.ready.then(updateLayout);
 
@@ -1068,7 +1410,6 @@ function useFallback() {
   });
   allPlaces.forEach(computeTags);
   renderAll();
-  expandSheet();   // open the sheet once on first load
 }
 
 // ── MARKERS ──
@@ -1211,10 +1552,17 @@ function setVibe(vibeId) {
   // Toggle: tap same vibe again to deselect
   activeVibe = activeVibe === vibeId ? null : vibeId;
 
+  let activePill = null;
   document.querySelectorAll('.vibe-pill').forEach(btn => {
     const on = btn.dataset.vibe === activeVibe;
     btn.classList.toggle('active', on);
+    if (on) activePill = btn;
   });
+
+  // Scroll the active pill into view if it's clipped by the scroll container
+  if (activePill) {
+    activePill.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+  }
 
   applyFilters(); // markers + cards update; map stays where the user is
 }
@@ -1413,10 +1761,8 @@ async function openDetail(p) {
   document.getElementById('d-address-text').textContent = p.address;
   document.getElementById('d-gmaps').href = p.gmUrl || '#';
 
-  const badge = document.getElementById('d-typebadge');
-  const iconForBadge = (TYPE_ICONS[p.type] || '').replace(/stroke="#fff"/g, 'stroke="currentColor"');
-  badge.innerHTML = iconForBadge + `<span>${TYPE_LABELS[p.type] || p.type}</span>`;
-  badge.style.background = document.body.classList.contains('dark') ? '#2A2521' : '#fff';
+  currentPlace = p;
+  updateSaveButton(p.placeId);
 
   const statusEl = document.getElementById('d-status');
   if (p.hoursObj) {
