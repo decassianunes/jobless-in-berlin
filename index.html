@@ -51,11 +51,21 @@
     /* ── CATEGORY TILES ── */
     #cats {
       position: fixed; top: 0; left: 0; right: 0; z-index: 30; /* top set dynamically by updateLayout() */
-      display: flex; gap: 8px; padding: 10px 16px;
-      overflow-x: auto; background: #F5F0EB;
-      border-bottom: var(--border);
+      display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+      background: #F5F0EB; border-bottom: var(--border);
     }
-    #cats::-webkit-scrollbar { display: none; }
+    #vibes-wrap {
+      flex: 1; min-width: 0;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to right, black 75%, transparent 100%);
+      mask-image: linear-gradient(to right, black 75%, transparent 100%);
+    }
+    #vibes-scroll {
+      display: flex; gap: 8px;
+      overflow-x: auto;
+      padding: 0 4px;
+    }
+    #vibes-scroll::-webkit-scrollbar { display: none; }
 
     .vibe-pill {
       flex-shrink: 0;
@@ -78,20 +88,52 @@
     }
 
     /* ── SEARCH ── */
-    #search-toggle {
-      position: sticky; right: 0;
+    /* search + saved in pills row — scroll with the row */
+    #search-toggle, #saved-toggle {
       flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 8px 14px;
+      height: 36px; padding: 0 14px;
       border: var(--border); border-radius: 99px;
-      background: white; font-size: 14px;
-      cursor: pointer;
-      box-shadow: 2px 2px 0 #111;
-      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
-      user-select: none;
+      background: white; box-shadow: 2px 2px 0 #111;
+      font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, box-shadow 0.1s, transform 0.1s;
     }
-    #search-toggle:active { transform: translate(2px,2px); box-shadow: none; }
-    @media (hover: hover) { #search-toggle:hover { background: #f0ebe4; } }
+    #search-toggle:active, #saved-toggle:active { transform: translate(2px,2px); box-shadow: none; }
+    @media (hover: hover) {
+      #search-toggle:hover, #saved-toggle:hover { background: #f0ebe4; }
+    }
+    body.dark #search-toggle, body.dark #saved-toggle { background: #2A2521; color: #F0EBE3; box-shadow: 2px 2px 0 #F0EBE3; }
+
+    /* info toggle in topbar — same style as dark-toggle */
+    #info-toggle {
+      flex-shrink: 0; width: 30px; height: 30px;
+      border: var(--border); border-radius: 10px;
+      background: white; box-shadow: var(--shadow-sm);
+      font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+    }
+    #info-toggle:active { transform: translate(2px,2px); box-shadow: none; }
+    @media (hover: hover) { #info-toggle:hover { background: #f0ebe4; } }
+    body.dark #info-toggle { background: #2A2521; color: #F0EBE3; }
+
+    /* info panel — slides in from right, same pattern as #detail */
+    #info-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 49;
+      background: rgba(0,0,0,0.25);
+    }
+    #info-backdrop.open { display: block; }
+    #info-panel {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: min(400px, 100vw); z-index: 50;
+      background: #F5F0EB; border-left: var(--border);
+      box-shadow: -4px 0 20px rgba(0,0,0,0.12);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      padding: 24px 20px;
+    }
+    #info-panel.open { transform: translateX(0); }
+    body.dark #info-panel { background: #1A1714; border-color: #444; }
 
     #search-bar {
       display: none;
@@ -126,7 +168,6 @@
     body.dark #search-input { background: #2A2521; color: #F0EBE3; }
     body.dark #search-input::placeholder { color: #666; }
     body.dark #search-clear { background: #2A2521; color: #F0EBE3; }
-    body.dark #search-toggle { background: #2A2521; color: #F0EBE3; }
 
     /* ── BOTTOM SHEET ── */
     #sheet {
@@ -496,18 +537,24 @@
     <p>We know that the first days after a [un] expected layoff are hard. Here is a map of the places to go and things to do when you're trying to find yourself.</p>
   </div>
   <div id="loader" class="loader-ring" style="display:none"></div>
+  <button id="info-toggle" onclick="openInfo()" title="Info">ℹ️</button>
   <button id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
 </div>
 
 <div id="cats">
-  <button class="vibe-pill" data-vibe="wallet"   onclick="setVibe('wallet')">💸 Wallet is crying</button>
-  <button class="vibe-pill" data-vibe="myself"   onclick="setVibe('myself')">🧍 Me and myself</button>
-  <button class="vibe-pill" data-vibe="linkedin" onclick="setVibe('linkedin')">💻 Linkedin focus</button>
-  <button class="vibe-pill" data-vibe="sun"      onclick="setVibe('sun')">☀️ Finally some sun</button>
-  <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')">🏃 Sweat the anxiety</button>
-  <button class="vibe-pill" data-vibe="germany"  onclick="setVibe('germany')">🏛️ Germany said so</button>
-  <button class="vibe-pill" data-vibe="mensa"    onclick="setVibe('mensa')">🍽️ Eat like a student (again)</button>
+  <div id="vibes-wrap">
+    <div id="vibes-scroll">
+      <button class="vibe-pill" data-vibe="wallet"   onclick="setVibe('wallet')">💸 Wallet is crying</button>
+      <button class="vibe-pill" data-vibe="myself"   onclick="setVibe('myself')">🧍 Me and myself</button>
+      <button class="vibe-pill" data-vibe="linkedin" onclick="setVibe('linkedin')">💻 Linkedin focus</button>
+      <button class="vibe-pill" data-vibe="sun"      onclick="setVibe('sun')">☀️ Finally some sun</button>
+      <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')">🏃 Sweat the anxiety</button>
+      <button class="vibe-pill" data-vibe="germany"  onclick="setVibe('germany')">🏛️ Germany said so</button>
+      <button class="vibe-pill" data-vibe="mensa"    onclick="setVibe('mensa')">🍽️ Eat like a student (again)</button>
+    </div>
+  </div>
   <button id="search-toggle" onclick="openSearch()" title="Search places">🔍</button>
+  <button id="saved-toggle" title="Saved places">❤️</button>
 </div>
 
 <div id="search-bar">
@@ -528,6 +575,11 @@
     <div id="cards"></div>
     <button id="cards-next" class="cards-scroll-btn">›</button>
   </div>
+</div>
+
+<div id="info-backdrop" onclick="closeInfo()"></div>
+<div id="info-panel">
+  <button class="detail-back" onclick="closeInfo()">←</button>
 </div>
 
 <div id="detail-backdrop" onclick="closeDetail()"></div>
@@ -725,6 +777,15 @@ function distMeters(a, b) {
 }
 
 // ── LAYOUT: position #cats and #map-controls below the topbar dynamically ──
+function openInfo() {
+  document.getElementById('info-panel').classList.add('open');
+  document.getElementById('info-backdrop').classList.add('open');
+}
+function closeInfo() {
+  document.getElementById('info-panel').classList.remove('open');
+  document.getElementById('info-backdrop').classList.remove('open');
+}
+
 function toggleDarkMode() {
   const dark = document.body.classList.toggle('dark');
   document.getElementById('dark-toggle').textContent = dark ? '☀️' : '🌙';
