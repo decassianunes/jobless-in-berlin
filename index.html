@@ -61,6 +61,29 @@
       padding: 2px 0 4px; /* top/bottom padding so pill shadows aren't clipped */
     }
     #vibes-scroll::-webkit-scrollbar { display: none; }
+    #vibes-fade-left {
+      flex-shrink: 0;
+      width: 48px;
+      margin-right: -48px;
+      align-self: stretch;
+      background: linear-gradient(to left, transparent 0%, rgba(245,240,235,0.9) 60%);
+      position: relative; z-index: 2;
+      display: none; align-items: center; justify-content: flex-start;
+    }
+    body.dark #vibes-fade-left { background: linear-gradient(to left, transparent 0%, rgba(26,23,20,0.9) 60%); }
+    #vibes-prev {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border: var(--border); border-radius: 50%;
+      background: white; box-shadow: var(--shadow-sm);
+      font-size: 16px; font-weight: 800; cursor: pointer; color: var(--black);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+      line-height: 1;
+    }
+    #vibes-prev:active { transform: translate(1px,1px); box-shadow: none; }
+    @media (hover: hover) { #vibes-prev:hover { background: var(--black); color: white; } }
+    body.dark #vibes-prev { background: #2A2521; color: #F0EBE3; }
     #vibes-fade {
       flex-shrink: 0;
       width: 48px;
@@ -83,8 +106,7 @@
     }
     #vibes-next:active { transform: translate(1px,1px); box-shadow: none; }
     @media (hover: hover) { #vibes-next:hover { background: var(--black); color: white; } }
-    /* hide arrow on touch devices — they swipe naturally */
-    @media (hover: none) { #vibes-next { display: none; } }
+    /* arrow visibility is controlled by JS, not by device type */
     body.dark #vibes-next { background: #2A2521; color: #F0EBE3; }
 
     .vibe-pill {
@@ -101,6 +123,7 @@
       white-space: nowrap;
       user-select: none;
     }
+    .pill-emoji { margin-right: 4px; }
     .vibe-pill:active { transform: translate(2px,2px); box-shadow: none; }
     .vibe-pill.active { background: var(--black); color: white; box-shadow: 2px 2px 0 #111; }
     @media (hover: hover) {
@@ -118,6 +141,8 @@
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s, box-shadow 0.1s, transform 0.1s;
     }
+    /* search button floats above the pills scrolling beside it — soft shade on its right edge */
+    #search-toggle { position: relative; z-index: 2; box-shadow: 2px 2px 0 #111, 6px 0 10px rgba(0,0,0,0.10); }
     #search-toggle:active, #saved-toggle-desktop:active { transform: translate(2px,2px); box-shadow: none; }
     @media (hover: hover) { #search-toggle:hover, #saved-toggle-desktop:hover { background: #f0ebe4; } }
     body.dark #search-toggle, body.dark #saved-toggle-desktop { background: #2A2521; color: #F0EBE3; box-shadow: 2px 2px 0 #F0EBE3; }
@@ -156,17 +181,17 @@
       background: rgba(0,0,0,0.25);
     }
     #info-backdrop.open { display: block; }
-    /* Mobile: bottom sheet */
+    /* Mobile: full-page, slides in from the right */
     #info-panel {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 50dvh; z-index: 50;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      height: 100dvh; z-index: 50;
       background: #F5F0EB;
-      border-radius: 24px 24px 0 0;
-      transform: translateY(100%);
+      border-radius: 0;
+      transform: translateX(100%);
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
       display: flex; flex-direction: column; overflow: hidden;
     }
-    #info-panel.open { transform: translateY(0); }
+    #info-panel.open { transform: translateX(0); }
     /* Desktop: right sidebar */
     @media (min-width: 768px) {
       #info-panel {
@@ -175,11 +200,16 @@
         border-radius: 0; border-left: var(--border);
         transform: translateX(100%);
         box-shadow: -4px 0 20px rgba(0,0,0,0.12);
-        padding: 24px 20px;
       }
       #info-panel.open { transform: translateX(0); }
     }
-    body.dark #info-panel { background: #1A1714; border-color: #444; }
+    body.dark #info-panel { background: #1A1714; border-color: #444; color: #F0EBE3; }
+    body.dark #info-panel h2,
+    body.dark #info-panel p { color: #F0EBE3; }
+    body.dark #info-panel .info-box { background: #2A2521 !important; }
+    body.dark #info-panel .info-disclaimer-text { color: #aaa !important; }
+    body.dark #info-panel .info-email-btn { background: #2A2521 !important; color: #F0EBE3 !important; }
+    body.dark #info-panel .info-madeby { border-top-color: rgba(255,255,255,0.1) !important; }
     #info-drag-handle { padding: 14px 0 6px; cursor: grab; flex-shrink: 0; text-align: center; }
     #info-drag-handle .handle { width: 44px; height: 5px; border-radius: 99px; background: #111; opacity: 0.35; margin: 0 auto; }
     body.dark #info-drag-handle .handle { background: #F0EBE3; }
@@ -197,7 +227,7 @@
       flex: 1; height: 38px; padding: 0 14px;
       border: var(--border); border-radius: 99px;
       background: white; font-family: inherit;
-      font-size: 14px; font-weight: 600; color: var(--black);
+      font-size: 16px; font-weight: 600; color: var(--black);
       box-shadow: var(--shadow-sm); outline: none;
       transition: box-shadow 0.15s;
     }
@@ -227,7 +257,7 @@
       border-radius: 24px 24px 0 0;
       display: flex; flex-direction: column;
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
-      height: 320px; max-height: 42dvh;
+      height: 344px; max-height: 48dvh;
     }
     #sheet.collapsed { transform: translateY(calc(100% - 148px)); }
     @media (min-width: 768px) {
@@ -236,14 +266,14 @@
 
     .handle { width: 40px; height: 4px; border-radius: 2px; background: var(--black); margin: 0 auto; }
 
-    .sheet-header { padding: 10px 16px 2px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .sheet-label { font-size: 16px; font-weight: 700; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+    .sheet-header { padding: 10px 16px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .sheet-label { font-size: 16px; font-weight: 700; line-height: 1; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
     .sheet-count { font-size: 11px; font-weight: 700; color: #888; }
 
     /* ── CARDS ── */
     #cards {
       display: flex; gap: 12px;
-      overflow-x: auto; padding: 10px 16px 24px;
+      overflow-x: auto; padding: 10px 16px 16px;
       scroll-snap-type: x mandatory;
       touch-action: pan-x;
       overscroll-behavior-x: contain;
@@ -332,30 +362,37 @@
     }
 
     /* ── DETAIL SHEET ── */
+    /* Mobile: full-page, slides in from the right */
     #detail {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 92dvh; z-index: 50;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      height: 100dvh; z-index: 50;
       background: #F5F0EB;
-      border-radius: 24px 24px 0 0;
-      transform: translateY(100%);
+      border-radius: 0;
+      transform: translateX(100%);
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
       display: flex; flex-direction: column; overflow: hidden;
     }
-    #detail.open { transform: translateY(0); }
+    #detail.open { transform: translateX(0); }
 
-    /* Mobile: hide back button, show drag handle */
+    /* Mobile: panels are full pages — show back button, hide drag handles */
     @media (max-width: 767px) {
-      .detail-back { display: none !important; }
-      .detail-drag-handle { display: flex !important; }
+      /* Full-page panels use a ← back button, not a drag handle */
+      .detail-drag-handle { display: none !important; }
+      #saved-drag-handle  { display: none !important; }
+      #info-drag-handle   { display: none !important; }
       /* Description: one line on mobile */
       #topbar p { display: none; }
       /* With no description, align buttons to centre vertically with the title */
-      #topbar { align-items: center; padding: 12px 16px; }
-      /* Pill emoji hidden on mobile — text only */
-      .pill-emoji { display: none; }
+      #topbar { align-items: center; padding: 16px 16px 12px; }
+      /* Remove the right-edge gradient fade that cuts off the last pill */
+      #vibes-fade { display: none; }
+      /* Slightly smaller pill label on mobile (still legible) */
+      .vibe-pill { font-size: 11px; }
+      /* Breathing room after the last pill (gradient fade is gone on mobile) */
+      #vibes-scroll { padding-right: 16px; }
       /* Handle: larger touch area on mobile */
       .handle-wrap { padding: 18px 0 14px !important; }
-      .handle { width: 48px; height: 5px; border-radius: 3px; opacity: 0.25; }
+      .handle { width: 48px; height: 5px; border-radius: 3px; opacity: 0.7; }
       /* Search: stays first (left) on mobile — no reorder needed */
       /* Saved: show in sheet header, hide in pills row on mobile */
       #saved-toggle-desktop { display: none !important; }
@@ -424,17 +461,17 @@
     }
     #saved-backdrop.open { display: block; }
 
-    /* Mobile: bottom sheet */
+    /* Mobile: full-page, slides in from the right */
     #saved-panel {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 88dvh; z-index: 50;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      height: 100dvh; z-index: 50;
       background: #F5F0EB;
-      border-radius: 24px 24px 0 0;
-      transform: translateY(100%);
+      border-radius: 0;
+      transform: translateX(100%);
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
       display: flex; flex-direction: column; overflow: hidden;
     }
-    #saved-panel.open { transform: translateY(0); }
+    #saved-panel.open { transform: translateX(0); }
 
     /* Desktop: right sidebar */
     @media (min-width: 768px) {
@@ -464,15 +501,17 @@
     body.dark #saved-drag-handle .handle { background: #F0EBE3; }
     @media (min-width: 768px) { #saved-drag-handle { display: none; } }
 
-    #saved-panel-header {
+    #saved-panel-header, #info-panel-header {
       display: flex; align-items: center; gap: 12px;
       padding: 8px 20px 16px; border-bottom: var(--border);
       flex-shrink: 0;
     }
     @media (min-width: 768px) {
-      #saved-panel-header { padding-top: 20px; }
+      #saved-panel-header, #info-panel-header { padding-top: 20px; }
     }
-    #saved-panel-header h2 { margin: 0; font-size: 18px; font-weight: 800; }
+    #saved-panel-header h2, #info-panel-header h2 { margin: 0; font-size: 18px; font-weight: 800; }
+    body.dark #info-panel-header { border-bottom-color: #444; }
+    body.dark #info-panel-header h2 { color: #F0EBE3; }
 
     /* Hide close button on mobile (use swipe down instead) */
     .saved-close-btn {
@@ -481,8 +520,9 @@
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; font-weight: 800; font-size: 15px; color: var(--black);
     }
+    .saved-close-btn:hover { background: #111; color: #F5F0EB; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #111; }
     body.dark .saved-close-btn { background: #2A2521; color: #F0EBE3; border-color: #555; }
-    @media (max-width: 767px) { .saved-close-btn { display: none; } }
+    body.dark .saved-close-btn:hover { background: #F0EBE3; color: #1A1714; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #F0EBE3; }
     #saved-list { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
     .saved-empty { text-align: center; color: #666; font-size: 14px; font-weight: 500; padding: 40px 20px; line-height: 1.6; }
     body.dark .saved-empty { color: #bbb; }
@@ -521,7 +561,8 @@
       transition: background 0.15s, color 0.15s;
     }
     .unsave-btn:hover { background: #111; color: white; border-color: #111; }
-    body.dark .unsave-btn { background: #1A1714; color: #888; }
+    body.dark .unsave-btn { background: #2A2521; color: #F0EBE3; border-color: #555; }
+    body.dark .unsave-btn:hover { background: #F0EBE3; color: #1A1714; border-color: #F0EBE3; }
 
     .detail-body { flex: 1; overflow-y: auto; padding: 20px 18px 32px; }
     .detail-name { font-size: 26px; font-weight: 800; color: var(--black); letter-spacing: -0.5px; margin-bottom: 8px; }
@@ -573,19 +614,19 @@
     #map-controls {
       position: fixed; top: 0; right: 12px; z-index: 35; /* top set dynamically by updateLayout() */
       display: flex; flex-direction: column;
-      border: var(--border); border-radius: 14px;
-      overflow: hidden; box-shadow: var(--shadow); background: #F5F0EB;
+      border: 1px solid rgba(0,0,0,0.18); border-radius: 14px;
+      overflow: hidden; box-shadow: none; background: #F5F0EB;
     }
     #map-controls button {
       width: 40px; height: 40px; background: #F5F0EB;
-      border: none; border-bottom: var(--border);
+      border: none; border-bottom: 1px solid rgba(0,0,0,0.18);
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; color: var(--black);
       font-size: 20px; font-weight: 800; line-height: 1;
       transition: background 0.15s, color 0.15s;
     }
     #map-controls button:last-child { border-bottom: none; }
-    .map-ctrl-divider { height: 1px; background: var(--black); flex-shrink: 0; }
+    .map-ctrl-divider { height: 1px; background: rgba(0,0,0,0.18); flex-shrink: 0; }
     @media (hover: hover) {
       #map-controls button:hover { background: var(--black); color: white; }
     }
@@ -657,15 +698,17 @@
     body.dark #cats,
     body.dark #sheet,
     body.dark #detail,
-    body.dark #map-controls { background: #1A1714; }
+    body.dark #map-controls { background: #1A1714; border-color: rgba(255,255,255,0.2); }
+    body.dark .map-ctrl-divider { background: rgba(255,255,255,0.2); }
 
     body.dark .vibe-pill { background: #2A2521; color: #F0EBE3; }
     body.dark .vibe-pill.active { background: #F0EBE3; color: #1A1714; }
     body.dark .vibe-pill:not(.active):hover { background: #3A3530; }
-    body.dark #map-controls button { background: #1A1714; color: #F0EBE3; }
+    body.dark #map-controls button { background: #1A1714; color: #F0EBE3; border-bottom-color: rgba(255,255,255,0.2); }
+    body.dark .cards-scroll-btn { background: #2A2521; color: #F0EBE3; }
     body.dark #map-controls button:last-child { border-bottom: none; }
 
-    body.dark .sheet-label,
+    body.dark .sheet-label { color: #F0EBE3; }
     body.dark .sheet-count { color: #999; }
 
     body.dark .detail-name,
@@ -680,7 +723,9 @@
 
     body.dark .handle { background: #F0EBE3; opacity: 0.4; }
 
+    .detail-back:hover { background: #111; color: #F5F0EB; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #111; }
     body.dark .detail-back { background: #2A2521; color: #F0EBE3; }
+    body.dark .detail-back:hover { background: #F0EBE3; color: #1A1714; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #F0EBE3; }
     body.dark .status-pill.open   { background: #1A3326; color: #4ADE80; }
     body.dark .status-pill.closed { background: #3B1A1A; color: #F87171; }
     body.dark .status-pill.unknown { background: #2A2521; color: #888; }
@@ -718,14 +763,19 @@
 
 <div id="cats">
   <button id="search-toggle" onclick="openSearch()" title="Search places">🔍</button>
+  <div id="vibes-fade-left">
+    <button id="vibes-prev" onclick="document.getElementById('vibes-scroll').scrollBy({left:-200,behavior:'smooth'})">‹</button>
+  </div>
   <div id="vibes-scroll">
-    <button class="vibe-pill" data-vibe="wallet"   onclick="setVibe('wallet')"><span class="pill-emoji">💸 </span>Wallet is crying</button>
-    <button class="vibe-pill" data-vibe="myself"   onclick="setVibe('myself')"><span class="pill-emoji">🧍 </span>Me and myself</button>
-    <button class="vibe-pill" data-vibe="linkedin" onclick="setVibe('linkedin')"><span class="pill-emoji">💻 </span>Linkedin focus</button>
-    <button class="vibe-pill" data-vibe="sun"      onclick="setVibe('sun')"><span class="pill-emoji">☀️ </span>Finally some sun</button>
-    <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')"><span class="pill-emoji">🏃 </span>Sweat the anxiety</button>
-    <button class="vibe-pill" data-vibe="germany"  onclick="setVibe('germany')"><span class="pill-emoji">🏛️ </span>Germany said so</button>
-    <button class="vibe-pill" data-vibe="mensa"    onclick="setVibe('mensa')"><span class="pill-emoji">🍽️ </span>Eat like a student (again)</button>
+    <button class="vibe-pill active" data-vibe="all" onclick="setVibe('all')"><span class="pill-emoji">📍</span>All</button>
+    <button class="vibe-pill" data-vibe="wallet"   onclick="setVibe('wallet')"><span class="pill-emoji">💸</span>Wallet is crying</button>
+    <button class="vibe-pill" data-vibe="myself"   onclick="setVibe('myself')"><span class="pill-emoji">🧍</span>Me and myself</button>
+    <button class="vibe-pill" data-vibe="linkedin" onclick="setVibe('linkedin')"><span class="pill-emoji">💻</span>Linkedin focus</button>
+    <button class="vibe-pill" data-vibe="sun"      onclick="setVibe('sun')"><span class="pill-emoji">☀️</span>Finally some sun</button>
+    <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')"><span class="pill-emoji">🏃</span>Sweat the anxiety</button>
+    <button class="vibe-pill" data-vibe="germany"  onclick="setVibe('germany')"><span class="pill-emoji">🏛️</span>Germany said so</button>
+    <button class="vibe-pill" data-vibe="mensa"    onclick="setVibe('mensa')"><span class="pill-emoji">🍽️</span>Eat like a student (again)</button>
+    <button class="vibe-pill" data-vibe="wine"     onclick="setVibe('wine')"><span class="pill-emoji">🍷</span>Wine o'clock</button>
   </div>
   <div id="vibes-fade">
     <button id="vibes-next" onclick="document.getElementById('vibes-scroll').scrollBy({left:200,behavior:'smooth'})">›</button>
@@ -744,10 +794,10 @@
     <div class="handle"></div>
   </div>
   <div class="sheet-header">
-    <span class="sheet-label">Close to you, so no excuses!</span>
+    <span class="sheet-label">Close to you. No excuses</span>
     <button id="saved-toggle" title="Saved places" onclick="openSaved()">Saved ❤️</button>
   </div>
-  <div style="position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;">
+  <div style="position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:stretch;">
     <button id="cards-prev" class="cards-scroll-btn hidden">‹</button>
     <div id="cards"></div>
     <button id="cards-next" class="cards-scroll-btn">›</button>
@@ -757,9 +807,46 @@
 <div id="info-backdrop" onclick="closeInfo()"></div>
 <div id="info-panel">
   <div id="info-drag-handle"><div class="handle"></div></div>
-  <button class="detail-back" onclick="closeInfo()">←</button>
-  <div style="padding: 20px 24px; flex: 1; display: flex; align-items: center; justify-content: center;">
-    <p style="font-size: 14px; font-weight: 500; color: #888; text-align: center; line-height: 1.6;">More to come ✨</p>
+  <div id="info-panel-header">
+    <button class="saved-close-btn" onclick="closeInfo()">←</button>
+    <div>
+      <h2>Jobless in Berlin 🇩🇪</h2>
+      <p style="font-size: 12px; font-weight: 600; color: #aaa; margin: 2px 0 0;">v1.0 · still growing</p>
+    </div>
+  </div>
+  <div style="padding: 24px 24px 40px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 32px;">
+
+    <!-- Story -->
+    <div>
+      <p style="font-size: 14px; line-height: 1.7; margin: 0; font-weight: 500;">My role got impacted. After 5 years, I had nowhere to go, no task to do, no meeting to attend.</p>
+      <p style="font-size: 14px; line-height: 1.7; margin: 12px 0 0; font-weight: 500;">I'm an immigrant. My social life was mostly built around work. When the job disappeared, a lot of the scaffolding around my day disappeared with it — and the city suddenly felt too big.</p>
+      <p style="font-size: 14px; line-height: 1.7; margin: 12px 0 0; font-weight: 500;">So I built this. Not to find a place — but to figure out how to live this new life.</p>
+    </div>
+
+    <!-- How it works -->
+    <div class="info-box" style="background: #EDE8E2; border-radius: 14px; padding: 18px 20px; border: var(--border);">
+      <p style="font-size: 13px; font-weight: 800; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.05em;">💡 How it works</p>
+      <p style="font-size: 14px; line-height: 1.7; margin: 0; font-weight: 500;">Filter by how you're feeling. Tap a vibe — quiet, free, focus, sun — and the map shows you what fits.</p>
+    </div>
+
+    <!-- Contribute -->
+    <div>
+      <p style="font-size: 13px; font-weight: 800; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.05em;">Know a good spot?</p>
+      <p style="font-size: 14px; line-height: 1.7; margin: 0 0 12px; font-weight: 500;">This is not a finished app and no place paid to be here. If you know somewhere that should be on the map, send it over.</p>
+      <a class="info-email-btn" href="mailto:joblessinberlin@gmail.com" style="display: inline-block; font-size: 14px; font-weight: 800; padding: 10px 18px; border-radius: 99px; border: var(--border); box-shadow: var(--shadow-sm); background: #F5F0EB; text-decoration: none; color: var(--black);">✉️ joblessinberlin@gmail.com</a>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="info-box" style="background: #EDE8E2; border-radius: 14px; padding: 14px 18px; border: var(--border);">
+      <p class="info-disclaimer-text" style="font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500; color: #666;">⚠️ The list of places comes from Google Reviews. We don't control the content or quality — always double-check before you go. If you spot something wrong, please send us an email.</p>
+    </div>
+
+    <!-- Made by -->
+    <div class="info-madeby" style="margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.1);">
+      <p style="font-size: 13px; font-weight: 500; color: #888; margin: 0;">Made by <a href="https://www.linkedin.com/in/cassianunes/" target="_blank" style="color: var(--black); font-weight: 800; text-decoration: none;">Cássia Nunes</a> · Berlin, 2025 ✨</p>
+      <p style="font-size: 13px; font-weight: 500; color: #aaa; line-height: 1.6; margin: 8px 0 0;">Product designer. I build things like this to solve real problems — <a href="https://www.linkedin.com/in/cassianunes/" target="_blank" style="color: var(--black); font-weight: 800; text-decoration: none;">open to what's next →</a></p>
+    </div>
+
   </div>
 </div>
 
@@ -768,7 +855,7 @@
   <div id="saved-drag-handle"><div class="handle"></div></div>
   <div id="saved-panel-header">
     <button class="saved-close-btn" onclick="closeSaved()">←</button>
-    <h2>Saved places</h2>
+    <h2>Saved</h2>
   </div>
   <div id="saved-list"></div>
 </div>
@@ -782,7 +869,7 @@
     <img id="d-photo" class="detail-hero-img" src="" alt=""/>
     <div class="detail-hero-overlay"></div>
     <button class="detail-back" onclick="closeDetail()">←</button>
-    <button id="d-save-btn" class="detail-save-btn" onclick="toggleSave(currentPlace)"><span id="d-save-icon">🤍</span></button>
+    <button id="d-save-btn" class="detail-save-btn" onclick="toggleSave(currentPlace)"><span id="d-save-icon">🩶</span></button>
   </div>
   <div class="detail-body">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
@@ -855,34 +942,37 @@ const CAT_COLOR = {
   park:      '#00C853',
   library:   '#4361EE',
   museum:    '#9B5DE5',
-  jobcenter: '#E63946',
+  jobcenter: '#1A3A5C',
   mensa:     '#FF69B4',
   gym:       '#14B8A6',
   pool:      '#00B4D8',
+  bar:       '#C0392B',
 };
 
-const TYPE_LABELS = { cafe:'Café', park:'Park', library:'Library', museum:'Museum', jobcenter:'Job Center', mensa:'Mensa', gym:'Gym', pool:'Pools & Lakes' };
+const TYPE_LABELS = { cafe:'Café', park:'Park', library:'Library', museum:'Museum', jobcenter:'Job Center', mensa:'Mensa', gym:'Gym', pool:'Pools & Lakes', bar:'Bar & Pub' };
 
 const DESCS = {
   cafe:      ['Specialty coffee roasted with love.','A cosy corner for slow mornings.','Third-wave brews and a warm welcome.','Great beans, even better vibes.','Your next favourite local café.','Outstanding espresso in the heart of Berlin.','Light-filled spot with excellent pastries.','Hidden gem beloved by neighbourhood regulars.'],
   park:      ['Green oasis in the urban jungle.','Perfect for weekend cycling and picnics.','Beloved by locals for a reason.','Fresh air and open skies await.','Berlin\'s hidden green gem.','Great trails and stunning city views.','Waterside walks and weekend markets.','Historic grounds with beautiful landscaping.'],
   library:   ['Free wifi, warm space, zero judgment.','Thousands of books and a quiet corner waiting for you.','A calm refuge with free membership for Berlin residents.','Read, study, or just sit. All welcome.','Free access to books, magazines, and your thoughts.'],
   museum:    ['Free entry — come as many times as you like.','World-class art and history, at no cost.','A whole afternoon for free. Take your time.','One of Berlin\'s best kept free secrets.','Thought-provoking exhibits, always free.'],
-  jobcenter: ['Guidance, support, and next steps — all in one place.','Free counselling and job placement support.','They\'ve helped thousands get back on their feet.','Practical support for your next chapter.','Resources, workshops, and a friendly team ready to help.'],
+  jobcenter: ['Guidance, support, and next steps — all in one place.','Free counselling and job placement support.','They\'ve helped thousands get back on their feet.','Practical support for your next chapter.','Resources, workshops, and a friendly team ready to help.','A course, a new skill, a fresh start.','Free or subsidised — Berlin has a school for where you are now.','Language, trade, or tech — there\'s a class for the next chapter.'],
   mensa:     ['Hot meals from €2.20 — open to everyone.','University canteen with daily fresh menus under €4.','Great food, great prices, great company.','Student prices for all. No ID needed.','Warm, filling meals that won\'t break the bank.'],
   gym:       ['Move your body, clear your head.','Affordable membership, no pressure.','A space to feel strong again.','Drop-in friendly — come as you are.','Sweat it out and reset.'],
   pool:      ['Cool off and float your worries away.','Open-air swimming the Berlin way.','A free dip in nature\'s pool.','Bring a towel and stay all afternoon.','Calm water, open sky, no entry fee at the lakes.'],
+  bar:       ['A glass of something and nowhere to be.','Berlin Kneipe energy. Stay as long as you like.','Good drinks, no judgment.','The kind of place you can sit alone and feel fine.','Cold beer, warm light, honest prices.'],
 };
 
 const TYPE_ICONS = {
   cafe:      `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
-  park:      `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L4 11 h5 L6 17 h4.5 v4 h3 v-4 H18 L19 11 h5 Z"/></svg>`,
+  park:      `<svg width="20" height="20" viewBox="0 0 160 177" fill="none" stroke="#fff" stroke-width="10" stroke-linejoin="round" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M62.2297 88.3993C62.7607 86.255 64.9295 84.9471 67.0739 85.4781C69.2183 86.0091 70.5262 88.1779 69.9952 90.3222C69.1545 93.717 65.6508 109.458 60.9024 132.556C59.0863 145.099 58.7922 150.821 58.636 154.445C58.6024 155.92 58.6391 156.994 58.8724 159.028C59.124 161.223 57.5486 163.206 55.354 163.458C53.1594 163.709 51.176 162.134 50.9243 159.939C50.6493 157.541 50.5944 156.098 50.6391 154.209L50.6422 154.131C50.8096 150.239 51.1264 144.231 53.0011 131.303L53.0179 131.187L53.0413 131.072C57.8012 107.913 61.3442 91.9752 62.2297 88.3993Z" fill="#fff"/><path d="M96.7297 84.0651C98.8645 84.6328 100.135 86.8232 99.5675 88.9581C98.5818 92.6664 95.9452 108.817 94.5565 126.124L94.5528 126.172L94.5482 126.219C93.9583 131.888 93.6864 140.289 93.6533 150.009L93.6531 154.251L93.6534 154.283L93.6535 154.315C93.598 158.735 93.3773 160.107 93.2857 161.525C93.1431 163.729 91.2404 165.401 89.0361 165.258C86.8316 165.116 85.1592 163.213 85.3017 161.009C85.4176 159.215 85.6006 158.366 85.6532 154.246C85.6156 142.771 85.8685 132.413 86.5819 125.485C87.9819 108.037 90.6629 91.3152 91.8359 86.9027C92.4034 84.7677 94.5948 83.4976 96.7297 84.0651Z" fill="#fff"/><path d="M77.8022 12.9815C85.4989 14.5086 96.8164 19.8849 104.153 31.5019C106.817 35.72 108.602 39.4447 109.826 42.4803C110.272 42.0046 110.758 41.5582 111.283 41.1729C115.371 38.175 119.955 39.5367 122.798 41.3724C126.673 43.8741 132.868 47.4107 137.807 51.8205C142.78 56.261 147.375 62.3418 147.019 70.302C146.711 77.1592 146.234 84.1854 145.019 90.0024C144.41 92.9176 143.583 95.6968 142.404 98.0714C141.229 100.437 139.578 102.656 137.191 104.074C133.35 106.358 128.505 108.199 124.48 109.35C122.456 109.928 120.527 110.365 118.933 110.59C118.146 110.701 117.338 110.775 116.592 110.764C116.088 110.756 114.73 110.724 113.514 109.944C111.654 108.751 111.113 106.277 112.306 104.417C113.303 102.862 115.197 102.23 116.878 102.762C117.077 102.754 117.385 102.728 117.814 102.668C118.934 102.51 120.486 102.17 122.281 101.657C125.894 100.624 130.042 99.0173 133.103 97.1978C133.714 96.8346 134.47 96.0615 135.238 94.5142C136.002 92.976 136.654 90.9202 137.187 88.3669C138.257 83.246 138.719 76.797 139.026 69.9447C139.223 65.5547 136.767 61.6166 132.479 57.788C128.156 53.9285 122.878 50.9451 118.46 48.0931C117.777 47.6521 117.189 47.4635 116.785 47.4268C116.453 47.3967 116.239 47.4586 116.014 47.6241C115.634 47.9026 114.98 48.6902 114.226 50.0054C113.536 51.207 112.99 52.4385 112.667 53.1889C112.594 53.357 112.471 53.6203 112.283 53.9088C112.118 54.1623 111.744 54.685 111.084 55.1221C110.312 55.634 109.184 55.9877 107.924 55.6985C106.824 55.4464 106.14 54.8185 105.83 54.486C105.263 53.8762 104.999 53.2117 104.937 53.0627C104.825 52.7917 104.737 52.5197 104.672 52.3138C104.546 51.9131 104.389 51.3527 104.241 50.839C104.081 50.2811 103.89 49.6324 103.65 48.8908C102.699 45.95 100.938 41.3928 97.3893 35.7737C91.4172 26.318 82.1581 21.9944 76.2331 20.8255C76.1062 20.9592 75.9259 21.1727 75.6908 21.5041C74.7725 22.7987 73.9272 24.6099 72.8054 26.8753C71.821 28.8635 71.3482 30.7547 71.1807 32.4047C72.1352 34.6292 72.8442 37.035 73.0716 39.4596C73.0973 39.7334 73.1708 40.5703 72.8344 41.4984C72.6451 42.0205 72.2212 42.8567 71.3026 43.4914C70.3079 44.1787 69.2192 44.2967 68.3719 44.1702C67.0349 43.9704 66.2064 43.1711 66.0434 43.0181C65.7234 42.7178 65.4786 42.4077 65.3125 42.1792C64.6818 41.3108 64.0824 40.0733 63.7456 38.8454C63.3689 37.4714 63.1259 35.8419 63.1079 34.0385C62.0785 32.0514 60.8175 30.2837 59.713 29.1163C58.7727 28.1224 57.3942 27.7532 55.1561 28.0905C53.7148 28.3078 51.8527 28.8705 49.4617 29.6876C47.1974 30.4614 44.4462 31.4683 41.6955 32.3219C38.1831 33.412 35.7045 37.2053 34.1709 42.4277C32.6994 47.4385 32.5345 52.3455 32.5725 53.181C32.5989 53.7589 33.1808 54.7705 35.4804 55.8488C36.4485 56.3028 37.4245 56.6186 38.1341 56.8128C38.4278 56.8932 38.6625 56.9474 38.8138 56.9811C38.8852 56.9953 38.9563 57.011 39.0273 57.0249L39.1299 57.0453C39.1482 57.0493 39.19 57.0593 39.242 57.072C39.2661 57.078 39.3193 57.0907 39.3856 57.1096C39.419 57.1193 39.4994 57.1443 39.5463 57.1595C39.6195 57.1845 39.8177 57.26 39.9417 57.3137C40.2121 57.449 41.261 58.277 41.8508 59.1315C42.1968 61.8219 39.9389 64.6013 39.0394 64.8862C38.7597 64.9293 38.3474 64.9566 38.2172 64.9563C38.143 64.9542 38.0207 64.9485 37.9725 64.945C37.8265 64.9333 37.7086 64.9143 37.7036 64.9136C37.6413 64.9044 37.5891 64.8959 37.5691 64.8924C37.4713 64.8751 37.3493 64.8506 37.2172 64.8223C37.1964 64.8179 37.1748 64.8122 37.1525 64.8073C32.9037 63.9632 29.7575 63.1587 26.6979 62.628C25.2337 62.374 24.1168 62.2507 23.2914 62.2503C22.7528 62.25 22.4999 62.3017 22.4318 62.3171C18.53 64.6238 17.1548 67.2368 16.5674 69.4476C16.2497 70.6436 16.1372 71.832 16.0903 73.0036C16.0655 73.6238 16.0607 74.1231 16.0449 74.7389C16.0319 75.2472 16.0081 75.884 15.9278 76.4956C15.9412 76.5395 16.0349 77.0007 16.8428 77.9808C17.8243 79.1713 19.3899 80.5462 21.4094 82.0311C25.4427 84.9968 30.4518 87.812 34.2035 90.0183C34.2051 90.0192 34.2236 90.0296 34.2663 90.0489C34.3164 90.0715 34.3859 90.1007 34.4911 90.1408C34.5686 90.1703 35.1385 90.3754 35.4564 90.5086C36.1135 90.784 38.263 91.7363 38.803 94.285L38.8502 94.5372L38.8875 94.7889C39.227 97.3804 38.262 99.6926 37.7796 100.884C37.4637 101.664 37.2908 102.071 37.1763 102.451C37.1696 102.473 37.1652 102.494 37.1599 102.513C37.26 102.783 37.5112 103.152 38.2002 103.618C39.1391 104.253 40.5702 104.835 42.4693 105.335C46.459 106.385 50.5459 106.664 54.2002 107.292C54.7545 107.387 55.4032 107.288 56.2537 106.869C57.1118 106.447 57.9338 105.82 58.8023 105.109C59.0701 104.856 59.2328 104.674 59.3517 104.507C59.4721 104.339 59.5946 104.124 59.7096 103.789C59.9722 103.025 60.1878 101.717 60.4654 96.7024C60.5876 94.4967 62.4745 92.808 64.6803 92.9301C66.8859 93.0523 68.5747 94.9393 68.4526 97.145C68.192 101.851 67.9704 104.366 67.2753 106.389C66.5125 108.608 65.3125 109.991 64.146 111.067L64.0638 111.143L63.9765 111.215C62.329 112.57 58.16 116.09 52.8453 115.177C50.3035 114.74 44.7867 114.217 40.4338 113.072C38.1617 112.474 35.7367 111.61 33.7182 110.245C31.6421 108.841 29.7503 106.723 29.2216 103.681C28.9741 102.257 29.2638 100.983 29.5178 100.141C29.7687 99.3088 30.1416 98.4332 30.3649 97.8818C30.4734 97.6139 30.5612 97.3801 30.635 97.177C30.4777 97.0982 30.314 97.012 30.1486 96.9147C26.6273 94.844 21.1269 91.7538 16.6695 88.4763C14.4437 86.8396 12.268 85.0084 10.67 83.0701C9.17178 81.2527 7.5538 78.5829 7.99667 75.4653C8.01558 75.3322 8.03439 75.0713 8.04812 74.5343C8.05976 74.0785 8.06855 73.3714 8.09608 72.683C8.15392 71.237 8.30392 69.3944 8.8353 67.3941C9.94237 63.2268 12.5988 58.8012 18.4698 55.3661C20.0646 54.433 21.8622 54.2494 23.2955 54.2501C23.7358 54.2503 24.1879 54.2693 24.6478 54.3023C24.6172 54.0555 24.5925 53.8035 24.5808 53.5452C24.5065 51.9135 24.75 46.1142 26.4944 40.1737C28.1768 34.4448 31.7214 27.041 39.3248 24.6814C41.9375 23.8706 44.3737 22.9718 46.8744 22.1172C49.2482 21.306 51.7289 20.5173 53.9638 20.1804C57.3852 19.6648 61.9761 19.8854 65.505 23.5987C65.5486 23.5079 65.591 23.4162 65.636 23.3253C66.5697 21.4396 67.7786 18.8309 69.1659 16.8753C70.4195 15.108 73.0281 12.1508 77.0693 12.8453L77.8022 12.9815Z" fill="#fff"/><path d="M94.6814 85.2083C96.881 85.0041 98.83 86.6218 99.0343 88.8214C99.3729 92.4701 99.3807 93.744 99.4127 95.033L99.4118 95.0327C99.4567 96.3735 99.4508 97.9723 99.4427 99.633C99.4423 99.7005 99.442 99.7682 99.4417 99.836C100.178 99.5751 101.078 99.4479 102.106 99.6849L102.334 99.7443C103.448 100.063 104.197 100.734 104.46 100.972C104.816 101.294 105.178 101.689 105.352 101.873C105.585 102.12 105.735 102.273 105.869 102.391C105.999 102.506 106.041 102.522 106.007 102.504C110.738 104.949 116.199 105.733 118.063 105.956C120.257 106.219 121.822 108.21 121.56 110.404C121.297 112.597 119.307 114.163 117.113 113.9C115.057 113.654 108.4 112.746 102.333 109.611C101.973 109.425 101.641 109.213 101.337 108.995C100.847 109.577 100.113 110.356 99.1137 110.948C97.7408 111.763 96.134 111.776 94.7965 111.12C93.7031 110.583 93.0566 109.739 92.7195 109.212C92.015 108.11 91.655 106.795 91.4956 105.667L91.4607 105.422L91.4566 105.175C91.4232 103.194 91.4349 101.283 91.4432 99.5939C91.4515 97.8747 91.4563 96.4297 91.4164 95.2692L91.4152 95.2498L91.4149 95.2306C91.3853 94.0383 91.3839 92.9616 91.0683 89.5612C90.8641 87.3616 92.4818 85.4125 94.6814 85.2083Z" fill="#fff"/><path d="M87.482 159.23C89.6868 159.091 91.5862 160.767 91.7243 162.972C91.8623 165.177 90.1871 167.077 87.9825 167.215C84.8046 167.414 83.593 167.445 82.3268 167.429C81.0563 167.413 80.1618 167.364 78.8703 167.395C75.8645 167.47 70.9375 167.447 66.1306 167.424C61.2603 167.4 56.5133 167.378 53.713 167.451C51.5046 167.51 49.6668 165.766 49.6086 163.558C49.5506 161.35 51.2938 159.513 53.502 159.454C56.4594 159.376 61.3637 159.4 66.17 159.423C71.0395 159.447 75.8153 159.47 78.6703 159.399L78.6733 159.398C80.1559 159.363 81.4693 159.418 82.4282 159.43C83.3925 159.442 84.3683 159.425 87.482 159.23Z" fill="#fff"/></svg>`,
   library:   `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
   museum:    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 9 12 2 21 9"/><rect x="3" y="9" width="18" height="13"/><line x1="9" y1="22" x2="9" y2="14"/><line x1="15" y1="22" x2="15" y2="14"/></svg>`,
-  jobcenter: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>`,
+  jobcenter: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`,
   mensa:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"/><path d="M5 11c0 4 3.1 7 7 7s7-3 7-7"/><path d="M7 7c0-1.5 1-2 1-3.5"/><path d="M12 7c0-1.5 1-2 1-3.5"/><path d="M17 7c0-1.5 1-2 1-3.5"/></svg>`,
   gym:       `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="3" height="8" rx="1"/><rect x="19" y="8" width="3" height="8" rx="1"/><rect x="5" y="10" width="2.5" height="4" rx="0.5"/><rect x="16.5" y="10" width="2.5" height="4" rx="0.5"/><line x1="7.5" y1="12" x2="16.5" y2="12"/></svg>`,
   pool:      `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 1.3 0 1.9-.5 2.5-1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 1.3 0 1.9-.5 2.5-1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 1.3 0 1.9-.5 2.5-1"/></svg>`,
+  bar:       `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12l-3 9a3 3 0 0 1-6 0L6 2z"/><line x1="12" y1="14" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>`,
 };
 
 const BLOBS = [
@@ -939,6 +1029,7 @@ const VIBE_MAP = {
   sweat:    { tags: ['active'] },
   germany:  { type: 'jobcenter' },
   mensa:    { type: 'mensa' },
+  wine:     { type: 'bar' },
 };
 
 // ── STATE ──
@@ -974,7 +1065,7 @@ function toggleVisited(id) {
 
 function updateSaveButton(id) {
   const icon = document.getElementById('d-save-icon');
-  if (icon) icon.textContent = isSaved(id) ? '❤️' : '🤍';
+  if (icon) icon.textContent = isSaved(id) ? '❤️' : '🩶';
 }
 
 function openSaved() {
@@ -1058,6 +1149,9 @@ function renderSavedPanel() {
           <div class="saved-card-name">${p.name}</div>
           <div class="saved-card-addr">${p.address || ''}</div>
         </div>
+        <div class="saved-card-actions">
+          <button class="unsave-btn" title="Remove from saved" onclick="event.stopPropagation(); unsaveById('${p.id}')">Remove</button>
+        </div>
       </div>`;
   }).join('');
 }
@@ -1139,16 +1233,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, { passive: false });
 
-  // Show/hide the › arrow based on whether pills overflow
+  // Show/hide the › and ‹ arrows based on scroll position
   function updateVibesArrow() {
-    const btn = document.getElementById('vibes-next');
-    if (!btn) return;
-    const hasMore = vibesEl.scrollWidth > vibesEl.clientWidth + 4;
-    btn.style.display = hasMore ? '' : 'none';
+    const btnNext = document.getElementById('vibes-next');
+    const fadeRight = document.getElementById('vibes-fade');
+    const btnPrev = document.getElementById('vibes-prev');
+    const fadeLeft = document.getElementById('vibes-fade-left');
+    if (!btnNext || !fadeRight) return;
+    const overflows = vibesEl.scrollWidth > vibesEl.clientWidth + 4;
+    const atEnd = vibesEl.scrollLeft + vibesEl.clientWidth >= vibesEl.scrollWidth - 4;
+    const atStart = vibesEl.scrollLeft <= 4;
+    const showRight = overflows && !atEnd;
+    const showLeft = overflows && !atStart;
+    fadeRight.style.display = showRight ? 'flex' : 'none';
+    btnNext.style.display = showRight ? 'flex' : 'none';
+    if (fadeLeft && btnPrev) {
+      fadeLeft.style.display = showLeft ? 'flex' : 'none';
+      btnPrev.style.display = showLeft ? 'flex' : 'none';
+    }
   }
   vibesEl.addEventListener('scroll', updateVibesArrow);
   window.addEventListener('resize', updateVibesArrow);
   requestAnimationFrame(updateVibesArrow);
+  setTimeout(updateVibesArrow, 300);
 });
 document.fonts.ready.then(updateLayout);
 
@@ -1256,12 +1363,19 @@ const SEARCH_CONFIGS = [
   { type: 'gym',       includedTypes: ['gym', 'fitness_center'] },
   { type: 'pool',      includedTypes: ['swimming_pool'] },
   { type: 'pool',      textQuery: 'Badesee Berlin' },
+  { type: 'bar',       includedTypes: ['bar'] },
+  { type: 'bar',       textQuery: 'Kneipe Berlin' },
+  { type: 'jobcenter', textQuery: 'Volkshochschule Berlin' },
+  { type: 'jobcenter', textQuery: 'Berufsschule Ausbildung Berlin' },
+  { type: 'jobcenter', includedTypes: ['language_school'] },
 ];
 
 const PLACE_FIELDS = ['displayName','location','rating','photos',
                       'regularOpeningHours','formattedAddress',
                       'userRatingCount','id',
-                      'priceLevel','paymentOptions'];
+                      'priceLevel','paymentOptions','types'];
+
+const EXCLUDED_PLACE_TYPES = ['lodging', 'hotel', 'motel', 'resort_hotel', 'bed_and_breakfast', 'extended_stay_hotel', 'hostel', 'spa'];
 
 async function searchCategory(cfg) {
   try {
@@ -1272,6 +1386,7 @@ async function searchCategory(cfg) {
         fields: PLACE_FIELDS,
         locationRestriction: { center, radius: RADIUS },
         includedTypes: cfg.includedTypes,
+        excludedTypes: EXCLUDED_PLACE_TYPES,
         maxResultCount: 20,
         rankPreference: google.maps.places.SearchNearbyRankPreference.DISTANCE,
         language: 'en-US', region: 'DE',
@@ -1287,7 +1402,12 @@ async function searchCategory(cfg) {
       });
       places = r.places;
     }
-    return (places || []).map(p => { const pl = convertPlace(p, cfg.type); computeTags(pl); return pl; });
+    const filtered = (places || []).filter(p => {
+      if (!p) return false;
+      const t = Array.isArray(p.types) ? p.types : [];
+      return !t.some(pt => EXCLUDED_PLACE_TYPES.includes(pt));
+    });
+    return filtered.map(p => { const pl = convertPlace(p, cfg.type); computeTags(pl); return pl; });
   } catch(e) { console.error('Places search failed for', cfg.type, ':', e?.message || e); return []; }
 }
 
@@ -1518,8 +1638,10 @@ function openSearch() {
   activeVibe = null;
   document.querySelectorAll('.vibe-pill').forEach(b => b.classList.remove('active'));
   // Show search bar at the same top position as #cats
+  const cats = document.getElementById('cats');
   const searchBar = document.getElementById('search-bar');
-  searchBar.style.top = document.getElementById('cats').style.top;
+  searchBar.style.top = cats.style.top;
+  cats.style.visibility = 'hidden';   // hide pills row so it doesn't show through under the search bar
   searchBar.classList.add('open');
   document.getElementById('search-input').focus();
   applyFilters();
@@ -1529,6 +1651,7 @@ function closeSearch() {
   searchQuery = '';
   document.getElementById('search-input').value = '';
   document.getElementById('search-bar').classList.remove('open');
+  document.getElementById('cats').style.visibility = '';   // restore pills row
   applyFilters();
 }
 
@@ -1549,12 +1672,17 @@ function setVibe(vibeId) {
     document.getElementById('search-input').value = '';
     document.getElementById('search-bar').classList.remove('open');
   }
-  // Toggle: tap same vibe again to deselect
-  activeVibe = activeVibe === vibeId ? null : vibeId;
+  // "All" pill clears any filter; other pills toggle (tap again to deselect)
+  if (vibeId === 'all') {
+    activeVibe = null;
+  } else {
+    activeVibe = activeVibe === vibeId ? null : vibeId;
+  }
 
   let activePill = null;
   document.querySelectorAll('.vibe-pill').forEach(btn => {
-    const on = btn.dataset.vibe === activeVibe;
+    // "All" is active whenever no vibe is selected; otherwise match the active vibe
+    const on = btn.dataset.vibe === 'all' ? activeVibe === null : btn.dataset.vibe === activeVibe;
     btn.classList.toggle('active', on);
     if (on) activePill = btn;
   });
@@ -1748,6 +1876,9 @@ function collapseSheet() { document.getElementById('sheet').classList.add('colla
 
 // ── DETAIL ──
 async function openDetail(p) {
+  // Navigating away from search to view a place — reset search so it starts fresh next time
+  if (document.getElementById('search-bar').classList.contains('open')) closeSearch();
+
   // Render basic info immediately
   const photoEl = document.getElementById('d-photo');
   photoEl.style.display = p.photo ? 'block' : 'none';   // no photo → show color hero

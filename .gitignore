@@ -5,3 +5,6 @@
 
 # Claude local settings (preview config is OK to commit, local settings aren't)
 .claude/settings.local.json
+
+# Per-conversation session logs (kept local, never pushed)
+conversation_logs/
