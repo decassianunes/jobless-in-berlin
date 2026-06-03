@@ -103,11 +103,11 @@ const TAG_DEFS = [
 ];
 
 const CAT_TAG_DEFAULTS = {
-  cafe:      { cost:'cheap',    atmosphere:'quiet',  environment:'indoor',  social:null,     utility:['workfriendly'] },
+  cafe:      { cost:null,       atmosphere:'quiet',  environment:'indoor',  social:null,     utility:['workfriendly'] },
   park:      { cost:'free',     atmosphere:null,     environment:'outdoor', social:'solo',   utility:['weather','active'] },
   library:   { cost:'free',     atmosphere:'quiet',  environment:'indoor',  social:'solo',   utility:['workfriendly'] },
   museum:    { cost:null,       atmosphere:'quiet',  environment:'indoor',  social:'solo',   utility:[] },
-  jobcenter: { cost:'free',     atmosphere:null,     environment:'indoor',  social:'solo',   utility:[] },
+  jobcenter: { cost:'free',     atmosphere:null,     environment:'indoor',  social:null,     utility:[] },
   mensa:     { cost:'cheap',    atmosphere:null,     environment:'indoor',  social:null,     utility:[] },
   gym:       { cost:null,       atmosphere:null,     environment:'indoor',  social:'solo',   utility:['active'] },
   pool:      { cost:null,       atmosphere:null,     environment:'outdoor', social:'solo',   utility:['active','weather'] },
@@ -115,7 +115,6 @@ const CAT_TAG_DEFAULTS = {
 
 // ── VIBE MAP ──
 const VIBE_MAP = {
-  wallet:   { tags: ['free', 'cheap'] },
   myself:   { tags: ['solo', 'quiet'] },
   linkedin: { tags: ['workfriendly'] },
   sun:      { tags: ['outdoor', 'weather'] },
@@ -128,6 +127,7 @@ const VIBE_MAP = {
 // ── STATE ──
 let map, GPlace;
 let allPlaces = [], customMarkers = {}, activeVibe = null, searchQuery = '', sheetOpen = false;
+let selectedMarkerId = null;
 let currentPlace = null;
 let savedPlaces = JSON.parse(localStorage.getItem('jib_saved') || '[]');
 let visitedIds = new Set(JSON.parse(localStorage.getItem('jib_visited') || '[]'));
@@ -706,6 +706,18 @@ function syncMarkers() {
   });
 }
 
+// Highlight the pin for the currently-open place (raised + deeper shadow).
+// Pass null to clear. Safe if the place has no marker on the map.
+function highlightMarker(id) {
+  if (selectedMarkerId && customMarkers[selectedMarkerId]?.div) {
+    customMarkers[selectedMarkerId].div.classList.remove('blob-selected');
+  }
+  selectedMarkerId = id;
+  if (id && customMarkers[id]?.div) {
+    customMarkers[id].div.classList.add('blob-selected');
+  }
+}
+
 // ── CARDS ──
 function buildCards(filter) {
   const el = document.getElementById('cards');
@@ -1043,6 +1055,7 @@ async function openDetail(p) {
   document.getElementById('d-gmaps').href = p.gmUrl || '#';
 
   currentPlace = p;
+  highlightMarker(p.id);
   updateSaveButton(p.placeId);
 
   const statusEl = document.getElementById('d-status');
@@ -1225,6 +1238,7 @@ function closeDetail() {
   document.getElementById('detail').classList.remove('open');
   document.getElementById('detail-backdrop').classList.remove('open');
   document.body.classList.remove('detail-open');
+  highlightMarker(null);
 }
 
 // ── ZOOM BUTTONS ──
