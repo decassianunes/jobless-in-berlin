@@ -340,6 +340,12 @@
     .card-status { font-size: 10px; font-weight: 700; }
     .card-status.open   { color: #6EF5A8; }
     .card-status.closed { color: rgba(255,255,255,0.55); }
+    .card-desc {
+      font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.9);
+      line-height: 1.3; margin-top: 4px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
 
     /* ── DETAIL BACKDROP (desktop click-outside) ── */
     #detail-backdrop {

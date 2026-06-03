@@ -498,7 +498,7 @@ const SEARCH_CONFIGS = [
   { type: 'bar',       textQuery: 'Kneipe Berlin' },
   { type: 'jobcenter', textQuery: 'Volkshochschule Berlin' },
   { type: 'jobcenter', textQuery: 'Berufsschule Ausbildung Berlin' },
-  { type: 'jobcenter', includedTypes: ['language_school'] },
+  { type: 'jobcenter', textQuery: 'Sprachschule Berlin' },
 ];
 
 const PLACE_FIELDS = ['displayName','location','rating','photos',
@@ -727,6 +727,7 @@ function buildCards(filter) {
         <div class="card-name">${p.name}</div>
         <div class="card-stars">${starStr(p.stars)} ${p.stars}</div>
         ${statusHTML}
+        ${p.desc ? `<div class="card-desc">${p.desc}</div>` : ''}
       </div>`;
 
     card.addEventListener('click', () => {
@@ -1232,7 +1233,7 @@ document.getElementById('zoom-out').addEventListener('click', () => { if (map) m
         if (!inBerlin(lat, lng)) {
           showBerlinOverview();
           fetchFromPlaces(true);
-          showLocateError("You're outside Berlin — showing Berlin places.");
+          showLocateError("You're outside of Berlin");
           return;
         }
         userLoc = { lat, lng };
@@ -1262,7 +1263,7 @@ document.getElementById('zoom-out').addEventListener('click', () => { if (map) m
     const banner = document.createElement('div');
     banner.id = 'app-banner';
     banner.setAttribute('role', 'alert');
-    banner.style.cssText = 'position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:12px;max-width:min(92vw,440px);background:#FFE066;color:#111;border:1.8px solid #111;border-radius:14px;box-shadow:3px 3px 0 #111;padding:14px 16px;font-size:14px;font-weight:700;line-height:1.4;';
+    banner.style.cssText = 'position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100vw - 24px);box-sizing:border-box;background:#FFE066;color:#111;border:1.8px solid #111;border-radius:14px;box-shadow:3px 3px 0 #111;padding:12px 14px;font-size:14px;font-weight:700;line-height:1.4;';
 
     const text = document.createElement('span');
     text.textContent = msg;
