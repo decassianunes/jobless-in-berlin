@@ -258,7 +258,25 @@ function unsaveById(id) {
 
 function openPlaceById(id) {
   closeSaved();
-  const place = allPlaces.find(p => p.placeId === id);
+  let place = allPlaces.find(p => p.placeId === id);
+  // Saved places often aren't in the current map results (the map has since
+  // searched elsewhere). Rebuild a place object from the saved entry — openDetail
+  // re-fetches the full details from Google using the placeId.
+  if (!place) {
+    const s = savedPlaces.find(p => p.id === id);
+    if (s) {
+      const list = DESCS[s.type];
+      place = {
+        ...s,
+        placeId: s.id,
+        stars: s.stars || 0,
+        ratingCount: s.ratingCount || 0,
+        desc: list ? list[hashStr(s.id || s.name) % list.length] : '',
+        reviews: [],
+        hoursObj: null,
+      };
+    }
+  }
   if (place) openDetail(place);
 }
 let searchCenter = { lat: ALEX.lat, lng: ALEX.lng }; // where the next search is centered
@@ -1263,7 +1281,10 @@ document.getElementById('zoom-out').addEventListener('click', () => { if (map) m
     const banner = document.createElement('div');
     banner.id = 'app-banner';
     banner.setAttribute('role', 'alert');
-    banner.style.cssText = 'position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100vw - 24px);box-sizing:border-box;background:#FFE066;color:#111;border:1.8px solid #111;border-radius:14px;box-shadow:3px 3px 0 #111;padding:12px 14px;font-size:14px;font-weight:700;line-height:1.4;';
+    // Sit just below the filter bar (#cats) so the banner never overlaps the pills.
+    const catsEl = document.getElementById('cats');
+    const topPx = (catsEl ? catsEl.getBoundingClientRect().bottom : 90) + 12;
+    banner.style.cssText = 'position:fixed;top:' + topPx + 'px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100vw - 24px);box-sizing:border-box;background:#FFE066;color:#111;border:1.8px solid #111;border-radius:14px;box-shadow:3px 3px 0 #111;padding:12px 14px;font-size:14px;font-weight:700;line-height:1.4;';
 
     const text = document.createElement('span');
     text.textContent = msg;

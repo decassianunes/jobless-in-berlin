@@ -375,10 +375,8 @@
       .detail-drag-handle { display: none !important; }
       #saved-drag-handle  { display: none !important; }
       #info-drag-handle   { display: none !important; }
-      /* Description: one line on mobile */
-      #topbar p { display: none; }
-      /* With no description, align buttons to centre vertically with the title */
-      #topbar { align-items: center; padding: 16px 16px 12px; }
+      /* Description: show on mobile too */
+      #topbar { align-items: flex-start; padding: 16px 16px 12px; }
       /* Remove the right-edge gradient fade that cuts off the last pill */
       #vibes-fade { display: none; }
       /* Slightly smaller pill label on mobile (still legible) */
