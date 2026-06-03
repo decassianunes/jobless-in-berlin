@@ -1,22 +1,9 @@
-# Jobless in Berlin
+Jobless in Berlin
 
-A mobile-first interactive map of cafés, parks, libraries, free museums, job
-centers, mensas, gyms, and pools/lakes near you in Berlin.
+A responsive interactive map for people figuring out where to go — and who they are — after losing a job. Filters cafés, parks, libraries, free museums, job centers, mensas, gyms, and pools/lakes in Berlin by how you feel and what you need from the day.
 
-Live at **[joblessberlin.de](https://joblessberlin.de)**.
+Built with HTML, CSS, vanilla JavaScript, and the Google Maps API. No framework, no build step, no sponsorships — just a real problem and a reason to learn.
 
-## Stack
-
-Single-file static site. No build step.
-
-- HTML + CSS + vanilla JavaScript (Tailwind via CDN)
-- Google Maps JavaScript API + Places API (New) for live place data
-- Hosted on GitHub Pages
-
-## Develop locally
-
-```sh
-npx serve -l 3000 .
-```
-
-Open `http://localhost:3000`.
+🌍 joblessinberlin.de
+💼 linkedin.com/in/cassianunes
+✉️ joblessinberlin@gmail.com
