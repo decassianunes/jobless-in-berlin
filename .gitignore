@@ -8,3 +8,6 @@
 
 # Per-conversation session logs (kept local, never pushed)
 conversation_logs/
+
+# Ideas / planning notes (kept local, never pushed)
+IDEAS.md
