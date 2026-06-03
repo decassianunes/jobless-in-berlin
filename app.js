@@ -419,6 +419,7 @@ function maybeRefetch() {
   const c = map.getCenter();
   if (!c) return;
   const center = { lat: c.lat(), lng: c.lng() };
+  if (!inBerlin(center.lat, center.lng)) return;           // stay inside Berlin — don't load places elsewhere
   if (distMeters(center, lastSearchCenter) < 2500) return;  // not far enough to bother
   searchCenter = center;
   fetchFromPlaces(true);
@@ -1225,11 +1226,19 @@ document.getElementById('zoom-out').addEventListener('click', () => { if (map) m
     navigator.geolocation.getCurrentPosition(
       pos => {
         const { latitude: lat, longitude: lng } = pos.coords;
+        btn.classList.remove('locating');
+        // Keep the app inside Berlin: if the visitor is elsewhere, return to the
+        // Berlin view and tell them, instead of loading places around them.
+        if (!inBerlin(lat, lng)) {
+          showBerlinOverview();
+          fetchFromPlaces(true);
+          showLocateError("You're outside Berlin — showing Berlin places.");
+          return;
+        }
         userLoc = { lat, lng };
         searchCenter = { lat, lng };
         map.panTo({ lat, lng });
         map.setZoom(15);
-        btn.classList.remove('locating');
         btn.classList.add('active');
         // Remove active state when user pans away
         map.addListenerOnce('dragstart', () => btn.classList.remove('active'));
@@ -1245,18 +1254,40 @@ document.getElementById('zoom-out').addEventListener('click', () => { if (map) m
     );
   });
 
+  // Centered, accessible warning banner with a close button (replaces the old
+  // corner toast). Announced to screen readers, dismissable with Esc or the ✕.
   function showLocateError(msg) {
-    let toast = document.getElementById('locate-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'locate-toast';
-      toast.style.cssText = 'position:fixed;bottom:230px;right:16px;z-index:60;background:#111;color:#fff;font-size:12px;font-weight:700;padding:10px 14px;border-radius:12px;max-width:220px;line-height:1.4;box-shadow:3px 3px 0 rgba(0,0,0,0.3)';
-      document.body.appendChild(toast);
-    }
-    toast.textContent = msg;
-    toast.style.opacity = '1';
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+    document.getElementById('app-banner')?.remove();
+
+    const banner = document.createElement('div');
+    banner.id = 'app-banner';
+    banner.setAttribute('role', 'alert');
+    banner.style.cssText = 'position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:12px;max-width:min(92vw,440px);background:#FFE066;color:#111;border:1.8px solid #111;border-radius:14px;box-shadow:3px 3px 0 #111;padding:14px 16px;font-size:14px;font-weight:700;line-height:1.4;';
+
+    const text = document.createElement('span');
+    text.textContent = msg;
+    text.style.flex = '1';
+
+    const close = document.createElement('button');
+    close.textContent = '✕';
+    close.setAttribute('aria-label', 'Close message');
+    close.style.cssText = 'flex:none;cursor:pointer;background:transparent;border:none;font-size:18px;font-weight:800;color:#111;line-height:1;padding:2px 6px;';
+
+    const dismiss = () => {
+      banner.remove();
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onOutside);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') dismiss(); };
+    const onOutside = (e) => { if (!banner.contains(e.target)) dismiss(); };
+    close.addEventListener('click', dismiss);
+    document.addEventListener('keydown', onKey);
+    // Attach on the next tick so the click that opened the banner doesn't
+    // immediately close it. Dismisses on any tap/click outside the banner.
+    setTimeout(() => document.addEventListener('pointerdown', onOutside), 0);
+
+    banner.append(text, close);
+    document.body.appendChild(banner);
   }
 })();
 
