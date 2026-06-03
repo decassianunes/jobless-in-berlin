@@ -360,7 +360,12 @@ async function initMap() {
 
   map = new Map(document.getElementById('map'), {
     center: ALEX,
-    zoom: 13,
+    zoom: 9,
+    restriction: {
+      // Fence the whole viewport to Berlin + the surrounding state of Brandenburg.
+      latLngBounds: { north: 53.6, south: 51.3, west: 11.2, east: 14.8 },
+      strictBounds: true,
+    },
     disableDefaultUI: true,
     styles: MAP_STYLES_LIGHT,
   });
@@ -423,11 +428,43 @@ function maybeRefetch() {
 // Search is centered here; defaults to Alexanderplatz until geolocation resolves.
 let userLoc = { lat: ALEX.lat, lng: ALEX.lng };
 
+// Berlin city limits (generous). Used to decide if the visitor is actually in
+// Berlin — only then do we center on them. Outside this, we show all of Berlin.
+const BERLIN_BOUNDS = { north: 52.68, south: 52.34, west: 13.08, east: 13.77 };
+function inBerlin(lat, lng) {
+  return lat >= BERLIN_BOUNDS.south && lat <= BERLIN_BOUNDS.north
+      && lng >= BERLIN_BOUNDS.west  && lng <= BERLIN_BOUNDS.east;
+}
+
+// Animated zoom-in: pan to a point, then step the zoom up one level at a time so
+// the move is visible (raster maps don't tween setZoom, so we fake the glide).
+function flyTo(center, targetZoom) {
+  map.panTo(center);
+  let z = map.getZoom();
+  const step = () => {
+    if (z >= targetZoom) return;
+    z += 1;
+    map.setZoom(z);
+    if (z < targetZoom) setTimeout(step, 140);
+  };
+  setTimeout(step, 250); // let the pan begin first
+}
+
+// Visitor is not in Berlin (or location failed): show the whole city, search Berlin.
+function showBerlinOverview() {
+  searchCenter = { lat: ALEX.lat, lng: ALEX.lng };
+  flyTo({ lat: ALEX.lat, lng: ALEX.lng }, 12);
+  const lbl = document.querySelector('.sheet-label');
+  if (lbl) lbl.textContent = 'Around Berlin';
+}
+
 function locateUser() {
   return new Promise(resolve => {
-    if (!navigator.geolocation) { resolve(); return; }
+    if (!navigator.geolocation) { showBerlinOverview(); resolve(); return; }
     navigator.geolocation.getCurrentPosition(pos => {
       const { latitude: lat, longitude: lng } = pos.coords;
+      // Only follow the visitor's location when they're actually in Berlin.
+      if (!inBerlin(lat, lng)) { showBerlinOverview(); resolve(); return; }
       userLoc = { lat, lng };
       searchCenter = { lat, lng };
       const youEl = document.createElement('div');
@@ -438,9 +475,9 @@ function locateUser() {
         </div>`;
       const youMarker = new window.BlobMarker({ lat, lng }, youEl.innerHTML, null);
       youMarker.setMap(map);
-      map.panTo({ lat, lng });
+      flyTo({ lat, lng }, 14);
       resolve();
-    }, () => resolve(), { enableHighAccuracy: true, timeout: 8000 });
+    }, () => { showBerlinOverview(); resolve(); }, { enableHighAccuracy: true, timeout: 8000 });
   });
 }
 
