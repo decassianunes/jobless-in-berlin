@@ -114,15 +114,27 @@ const CAT_TAG_DEFAULTS = {
 };
 
 // ── VIBE MAP ──
+// `needs` = the place types each vibe requires. Core types (loaded on first
+// paint) are omitted; only the extra types a vibe pulls in are listed, so
+// tapping the vibe fetches just those on demand (lazy-load → fewer API calls).
 const VIBE_MAP = {
-  myself:   { tags: ['solo', 'quiet'] },
-  linkedin: { tags: ['workfriendly'] },
-  sun:      { tags: ['outdoor', 'weather'] },
-  sweat:    { tags: ['active'] },
-  germany:  { type: 'jobcenter' },
-  mensa:    { type: 'mensa' },
-  wine:     { type: 'bar' },
+  myself:   { tags: ['solo', 'quiet'],     needs: ['gym', 'pool'] },
+  linkedin: { tags: ['workfriendly'],      needs: [] },
+  sun:      { tags: ['outdoor', 'weather'], needs: ['pool'] },
+  sweat:    { tags: ['active'],            needs: ['gym', 'pool'] },
+  germany:  { type: 'jobcenter',           needs: ['jobcenter'] },
+  mensa:    { type: 'mensa',               needs: ['mensa'] },
+  wine:     { type: 'bar',                 needs: [] },
 };
+
+// Loaded on first paint so the default "All" map looks populated.
+const CORE_TYPES = ['cafe', 'park', 'library', 'museum', 'bar'];
+// Which place types are currently loaded into allPlaces (starts as core).
+let loadedTypes = new Set(CORE_TYPES);
+// The search configs that produce a given set of types.
+function configsForTypes(types) {
+  return SEARCH_CONFIGS.filter(c => types.includes(c.type));
+}
 
 // ── STATE ──
 let map, GPlace;
@@ -318,7 +330,9 @@ function openPlaceById(id) {
 }
 let searchCenter = { lat: ALEX.lat, lng: ALEX.lng }; // where the next search is centered
 let lastSearchCenter = null;                          // where results were last loaded
+let searchedCenters = [];                             // every center we've already loaded (in-session de-dupe)
 let fetching = false, idleTimer = null;
+let flying = false;                                   // true while flyTo's stepped zoom is animating
 
 // ── HELPERS ──
 function hashStr(str) {
@@ -470,12 +484,13 @@ async function initMap() {
 
 // Reload places when the user has navigated far from the last search center
 function maybeRefetch() {
-  if (fetching || !lastSearchCenter) return;       // skip during a fetch or before first load
+  if (fetching || flying || !lastSearchCenter) return;  // skip during a fetch, a fly-in, or before first load
   const c = map.getCenter();
   if (!c) return;
   const center = { lat: c.lat(), lng: c.lng() };
   if (!inBerlin(center.lat, center.lng)) return;           // stay inside Berlin — don't load places elsewhere
-  if (distMeters(center, lastSearchCenter) < 2500) return;  // not far enough to bother
+  // In-session de-dupe: never re-run the searches for an area we already loaded.
+  if (searchedCenters.some(prev => distMeters(center, prev) < 2500)) return;
   searchCenter = center;
   fetchFromPlaces(true);
 }
@@ -495,13 +510,15 @@ function inBerlin(lat, lng) {
 // Animated zoom-in: pan to a point, then step the zoom up one level at a time so
 // the move is visible (raster maps don't tween setZoom, so we fake the glide).
 function flyTo(center, targetZoom) {
+  flying = true;                 // suppress refetch while the zoom animates
   map.panTo(center);
   let z = map.getZoom();
   const step = () => {
-    if (z >= targetZoom) return;
+    if (z >= targetZoom) { flying = false; return; }
     z += 1;
     map.setZoom(z);
     if (z < targetZoom) setTimeout(step, 140);
+    else flying = false;         // reached target — animation done
   };
   setTimeout(step, 250); // let the pan begin first
 }
@@ -622,7 +639,11 @@ function convertPlace(place, type) {
   };
 }
 
-async function fetchFromPlaces(isRefetch = false) {
+// configs: which searches to run (defaults to every currently-loaded type).
+// merge:   true  → add these results to what's already on the map (lazy vibe load)
+//          false → replace the map's places (initial load / pan refetch)
+async function fetchFromPlaces(isRefetch = false, configs = null, merge = false) {
+  const runConfigs = configs || configsForTypes([...loadedTypes]);
   fetching = true;
   showLoader(true);
   const mapDiv = map?.getDiv();
@@ -630,7 +651,8 @@ async function fetchFromPlaces(isRefetch = false) {
   if (isRefetch && mapDiv) mapDiv.classList.add('map-loading');
 
   try {
-    const accum = [], seen = new Set();
+    const accum = merge ? allPlaces.slice() : [];
+    const seen = new Set(accum.map(p => p.id));
     let renderTimer = null;
     const scheduleRender = () => {
       clearTimeout(renderTimer);
@@ -641,7 +663,7 @@ async function fetchFromPlaces(isRefetch = false) {
       }, 120);
     };
 
-    await Promise.all(SEARCH_CONFIGS.map(async cfg => {
+    await Promise.all(runConfigs.map(async cfg => {
       const ps = await searchCategory(cfg);
       ps.forEach(p => { if (!seen.has(p.id)) { seen.add(p.id); accum.push(p); } });
       if (ps.length) scheduleRender();
@@ -649,17 +671,30 @@ async function fetchFromPlaces(isRefetch = false) {
 
     // Final render after all categories done
     clearTimeout(renderTimer);
-    if (accum.length) {
-      allPlaces = accum.slice();
-      syncMarkers();
-      applyFilters();
+    allPlaces = accum.slice();
+    syncMarkers();
+    applyFilters();
+
+    // Only a full (non-merge) load "claims" an area for the de-dupe guard.
+    if (!merge) {
+      lastSearchCenter = { ...searchCenter };
+      searchedCenters.push({ ...searchCenter });   // remember this area so we never reload it
     }
-    lastSearchCenter = { ...searchCenter };
   } catch(e) { /* keep fallback */ }
 
   if (mapDiv) mapDiv.classList.remove('map-loading');
   showLoader(false);
   fetching = false;
+}
+
+// Lazy-load a vibe's extra categories the first time it's tapped.
+async function ensureVibeLoaded(vibeId) {
+  const v = VIBE_MAP[vibeId];
+  if (!v || !v.needs) return;
+  const missing = v.needs.filter(t => !loadedTypes.has(t));
+  if (!missing.length) return;                 // already loaded — no API call
+  missing.forEach(t => loadedTypes.add(t));     // mark as loaded so we never refetch them here
+  await fetchFromPlaces(true, configsForTypes(missing), true);  // fetch just the new types, merge in
 }
 
 // ── FALLBACK DATA (shown instantly while Places API loads) ──
@@ -862,7 +897,7 @@ document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSearch();
 });
 
-function setVibe(vibeId) {
+async function setVibe(vibeId) {
   // Close search if open — vibe and search are mutually exclusive
   if (searchQuery || document.getElementById('search-bar').classList.contains('open')) {
     searchQuery = '';
@@ -889,7 +924,14 @@ function setVibe(vibeId) {
     activePill.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
   }
 
-  applyFilters(); // markers + cards update; map stays where the user is
+  applyFilters(); // show what we already have right away (map stays where the user is)
+
+  // Lazy-load: fetch this vibe's extra categories if they aren't on the map yet,
+  // then refresh so the new pins/cards appear.
+  if (activeVibe) {
+    await ensureVibeLoaded(activeVibe);
+    applyFilters();
+  }
 }
 
 function applyFilters(fitMap = false) {
