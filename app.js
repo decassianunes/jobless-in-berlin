@@ -129,8 +129,33 @@ let map, GPlace;
 let allPlaces = [], customMarkers = {}, activeVibe = null, searchQuery = '', sheetOpen = false;
 let selectedMarkerId = null;
 let currentPlace = null;
-let savedPlaces = JSON.parse(localStorage.getItem('jib_saved') || '[]');
+// Store ONLY the Place ID (Google Maps ToS-compliant). Strip any old saved
+// entries that still hold names/photos/addresses from before this change, and
+// flush the cleaned (ID-only) data back to storage so that content is deleted.
+let savedPlaces = JSON.parse(localStorage.getItem('jib_saved') || '[]')
+  .map(p => ({ id: p.id }))
+  .filter(p => p.id);
+localStorage.setItem('jib_saved', JSON.stringify(savedPlaces));
 let visitedIds = new Set(JSON.parse(localStorage.getItem('jib_visited') || '[]'));
+
+// Session-only, in-memory cache of fetched saved-place details. Never written to
+// storage, so nothing Google-derived is persisted — stays ToS-compliant.
+const savedDetailCache = {};
+async function fetchSavedDetails(id) {
+  if (!id || id.startsWith('fb')) return null;
+  if (savedDetailCache[id]) return savedDetailCache[id];
+  try {
+    const place = new GPlace({ id });
+    await place.fetchFields({ fields: ['displayName', 'photos', 'formattedAddress'] });
+    const d = {
+      name: place.displayName || '',
+      address: place.formattedAddress || '',
+      photo: place.photos?.length ? place.photos[0].getURI({ maxWidth: 200 }) : '',
+    };
+    savedDetailCache[id] = d;
+    return d;
+  } catch (e) { console.error('Saved detail fetch failed', id, e?.message || e); return null; }
+}
 
 function persistSaved()   { localStorage.setItem('jib_saved',   JSON.stringify(savedPlaces)); }
 function persistVisited() { localStorage.setItem('jib_visited', JSON.stringify([...visitedIds])); }
@@ -142,8 +167,7 @@ function toggleSave(p) {
   if (isSaved(p.placeId)) {
     savedPlaces = savedPlaces.filter(s => s.id !== p.placeId);
   } else {
-    savedPlaces.push({ id: p.placeId, name: p.name, type: p.type,
-                       color: p.color, photo: p.photo, address: p.address });
+    savedPlaces.push({ id: p.placeId });   // store ONLY the Place ID (ToS-compliant)
   }
   persistSaved();
   updateSaveButton(p.placeId);
@@ -224,29 +248,41 @@ function closeSaved() {
   handle.addEventListener('touchend',   onEnd,   { passive: true });
 })();
 
-function renderSavedPanel() {
+async function renderSavedPanel() {
   const list = document.getElementById('saved-list');
   if (!list) return;
   if (savedPlaces.length === 0) {
     list.innerHTML = '<p class="saved-empty">Nothing saved yet.<br>Tap ❤️ on any place to save it.</p>';
     return;
   }
-  list.innerHTML = savedPlaces.map(p => {
-    const thumb = p.photo
-      ? `<img class="saved-card-thumb" src="${p.photo}" alt="${p.name}">`
-      : `<div class="saved-card-swatch" style="background:${p.color || '#ccc'}"></div>`;
-    return `
-      <div class="saved-card" onclick="openPlaceById('${p.id}')">
-        ${thumb}
+  // We store only the Place ID, so name/photo/address aren't saved — render
+  // placeholder cards instantly, then fill each one in as its details load live.
+  list.innerHTML = savedPlaces.map(p => `
+      <div class="saved-card" id="saved-card-${p.id}" onclick="openPlaceById('${p.id}')">
+        <div class="saved-card-swatch" style="background:#e0d9d0"></div>
         <div class="saved-card-info">
-          <div class="saved-card-name">${p.name}</div>
-          <div class="saved-card-addr">${p.address || ''}</div>
+          <div class="saved-card-name">Loading…</div>
+          <div class="saved-card-addr"></div>
         </div>
         <div class="saved-card-actions">
           <button class="unsave-btn" title="Remove from saved" onclick="event.stopPropagation(); unsaveById('${p.id}')">Remove</button>
         </div>
-      </div>`;
-  }).join('');
+      </div>`).join('');
+
+  for (const p of savedPlaces) {
+    const d = await fetchSavedDetails(p.id);
+    const card = document.getElementById(`saved-card-${p.id}`);
+    if (!card || !d) continue;
+    card.querySelector('.saved-card-name').textContent = d.name || 'Saved place';
+    card.querySelector('.saved-card-addr').textContent = d.address || '';
+    if (d.photo) {
+      const img = document.createElement('img');
+      img.className = 'saved-card-thumb';
+      img.src = d.photo;
+      img.alt = d.name || '';
+      card.querySelector('.saved-card-swatch')?.replaceWith(img);
+    }
+  }
 }
 
 function unsaveById(id) {
@@ -259,23 +295,24 @@ function unsaveById(id) {
 function openPlaceById(id) {
   closeSaved();
   let place = allPlaces.find(p => p.placeId === id);
-  // Saved places often aren't in the current map results (the map has since
-  // searched elsewhere). Rebuild a place object from the saved entry — openDetail
+  // Saved entries store only the Place ID. Build a minimal place (reusing the
+  // session detail-cache if the Saved panel already fetched it); openDetail then
   // re-fetches the full details from Google using the placeId.
   if (!place) {
-    const s = savedPlaces.find(p => p.id === id);
-    if (s) {
-      const list = DESCS[s.type];
-      place = {
-        ...s,
-        placeId: s.id,
-        stars: s.stars || 0,
-        ratingCount: s.ratingCount || 0,
-        desc: list ? list[hashStr(s.id || s.name) % list.length] : '',
-        reviews: [],
-        hoursObj: null,
-      };
-    }
+    const d = savedDetailCache[id] || {};
+    place = {
+      placeId: id,
+      name: d.name || '',
+      address: d.address || '',
+      photo: d.photo || '',
+      color: '#EDE8E2',
+      type: null,
+      stars: 0,
+      ratingCount: 0,
+      desc: '',
+      reviews: [],
+      hoursObj: null,
+    };
   }
   if (place) openDetail(place);
 }
@@ -507,16 +544,14 @@ const SEARCH_CONFIGS = [
   { type: 'library',   includedTypes: ['library'] },
   { type: 'museum',    includedTypes: ['museum'] },
   { type: 'jobcenter', textQuery: 'Jobcenter Berlin' },
-  { type: 'mensa',     textQuery: 'Mensa Berlin' },
-  { type: 'mensa',     textQuery: 'Studierendenwerk Berlin Mensa' },
+  { type: 'jobcenter', textQuery: 'Volkshochschule Berlin' },
+  { type: 'jobcenter', textQuery: 'Sprachschule Berlin' },
+  { type: 'mensa',     textQuery: 'Mensa Studierendenwerk Berlin' },
   { type: 'gym',       includedTypes: ['gym', 'fitness_center'] },
   { type: 'pool',      includedTypes: ['swimming_pool'] },
   { type: 'pool',      textQuery: 'Badesee Berlin' },
   { type: 'bar',       includedTypes: ['bar'] },
   { type: 'bar',       textQuery: 'Kneipe Berlin' },
-  { type: 'jobcenter', textQuery: 'Volkshochschule Berlin' },
-  { type: 'jobcenter', textQuery: 'Berufsschule Ausbildung Berlin' },
-  { type: 'jobcenter', textQuery: 'Sprachschule Berlin' },
 ];
 
 const PLACE_FIELDS = ['displayName','location','rating','photos',
