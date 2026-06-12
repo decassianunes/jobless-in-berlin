@@ -161,19 +161,37 @@ let visitedIds = new Set(JSON.parse(localStorage.getItem('jib_visited') || '[]')
 // Session-only, in-memory cache of fetched saved-place details. Never written to
 // storage, so nothing Google-derived is persisted — stays ToS-compliant.
 const savedDetailCache = {};
+// Map Google place types → our category keys (for the right Saved-list icon).
+// Checks the most specific matches first; returns null if nothing fits (→ pin).
+function googleTypeToCategory(gTypes) {
+  const set = new Set(gTypes);
+  const has = (...ts) => ts.some(t => set.has(t));
+  if (has('cafe', 'coffee_shop', 'bakery')) return 'cafe';
+  if (has('library')) return 'library';
+  if (has('museum', 'art_gallery')) return 'museum';
+  if (has('park', 'national_park', 'garden', 'botanical_garden')) return 'park';
+  if (has('swimming_pool', 'public_bath')) return 'pool';
+  if (has('gym', 'fitness_center', 'sports_complex')) return 'gym';
+  if (has('bar', 'pub', 'wine_bar')) return 'bar';
+  return null;
+}
+
 async function fetchSavedDetails(id) {
   if (!id || id.startsWith('fb')) return null;
   if (savedDetailCache[id]) return savedDetailCache[id];
   try {
     const place = new GPlace({ id });
-    // Fetch ONLY name + address for the Saved list (cheaper tier, no photo).
-    // The photo is the most expensive part, so we skip it here and load it only
-    // when the user actually opens the place (the detail page re-fetches it).
-    await place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
+    // Fetch name + address + type for the Saved list (no photo — the expensive
+    // part — which loads only when the place is opened). `primaryType`/`types`
+    // sit in the same billing tier as the name/address we already request, so
+    // they add NO extra cost; they let us show the right category icon.
+    await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'primaryType', 'types'] });
+    const gTypes = [place.primaryType, ...(place.types || [])].filter(Boolean);
     const d = {
       name: place.displayName || '',
       address: place.formattedAddress || '',
       photo: '',
+      cat: googleTypeToCategory(gTypes),
     };
     savedDetailCache[id] = d;
     return d;
@@ -308,6 +326,15 @@ async function renderSavedPanel() {
     if (!card || !d) continue;
     card.querySelector('.saved-card-name').textContent = d.name || 'Saved place';
     card.querySelector('.saved-card-addr').textContent = d.address || '';
+    // Now that we know the real category, swap the placeholder pin for the
+    // matching coloured icon. Leaves the pin if the type didn't map to one of ours.
+    if (d.cat) {
+      const swatch = card.querySelector('.saved-card-swatch');
+      if (swatch) {
+        swatch.style.background = CAT_COLOR[d.cat] || '#b9b1a6';
+        swatch.innerHTML = TYPE_ICONS[d.cat] || PIN_ICON;
+      }
+    }
   }
 }
 
