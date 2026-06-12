@@ -280,9 +280,18 @@ async function renderSavedPanel() {
   }
   // We store only the Place ID, so name/photo/address aren't saved — render
   // placeholder cards instantly, then fill each one in as its details load live.
-  list.innerHTML = savedPlaces.map(p => `
+  // Generic location-pin shown when we don't know a saved place's category
+  // (it isn't in the currently-loaded set). White stroke to read on the colour.
+  const PIN_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+  list.innerHTML = savedPlaces.map(p => {
+    // If the place is already loaded on the map we know its category → show the
+    // matching coloured icon instantly. Otherwise fall back to a neutral pin.
+    const known = (typeof allPlaces !== 'undefined' ? allPlaces : []).find(pl => pl.id === p.id);
+    const icon  = known ? (TYPE_ICONS[known.type] || PIN_ICON) : PIN_ICON;
+    const bg    = known ? (CAT_COLOR[known.type] || '#b9b1a6') : '#b9b1a6';
+    return `
       <div class="saved-card" id="saved-card-${p.id}" onclick="openPlaceById('${p.id}')">
-        <div class="saved-card-swatch" style="background:#e0d9d0"></div>
+        <div class="saved-card-swatch" style="background:${bg}">${icon}</div>
         <div class="saved-card-info">
           <div class="saved-card-name">Loading…</div>
           <div class="saved-card-addr"></div>
@@ -290,7 +299,8 @@ async function renderSavedPanel() {
         <div class="saved-card-actions">
           <button class="unsave-btn" title="Remove from saved" onclick="event.stopPropagation(); unsaveById('${p.id}')">Remove</button>
         </div>
-      </div>`).join('');
+      </div>`;
+  }).join('');
 
   for (const p of savedPlaces) {
     const d = await fetchSavedDetails(p.id);
@@ -298,13 +308,6 @@ async function renderSavedPanel() {
     if (!card || !d) continue;
     card.querySelector('.saved-card-name').textContent = d.name || 'Saved place';
     card.querySelector('.saved-card-addr').textContent = d.address || '';
-    if (d.photo) {
-      const img = document.createElement('img');
-      img.className = 'saved-card-thumb';
-      img.src = d.photo;
-      img.alt = d.name || '';
-      card.querySelector('.saved-card-swatch')?.replaceWith(img);
-    }
   }
 }
 
@@ -1056,7 +1059,13 @@ function applyFilters(fitMap = false) {
   // refresh, so streaming results don't yank the user back while they scroll.
   const cardsEl = document.getElementById('cards');
   const viewKey = (activeVibe || '') + '|' + (searchQuery || '');
-  if (cardsEl && viewKey !== lastViewKey) cardsEl.scrollLeft = 0;
+  if (cardsEl && viewKey !== lastViewKey) {
+    cardsEl.scrollLeft = 0;
+    // We're back at the start of a fresh view → the left arrow must not show.
+    // Force it hidden here so it never lingers over the first card while the
+    // scroll position settles (the scroll listener re-shows it once you scroll).
+    document.getElementById('cards-prev')?.classList.add('hidden');
+  }
   lastViewKey = viewKey;
   if (window.updateCardScrollButtons) requestAnimationFrame(window.updateCardScrollButtons);
 
@@ -1469,6 +1478,13 @@ document.getElementById('zoom-out').addEventListener('click', () => { if (map) m
         map.panTo({ lat, lng });
         map.setZoom(15);
         btn.classList.add('active');
+        // Load the active mood's places around the NEW spot, so recentering
+        // actually shows pins near you instead of an empty map. Only the active
+        // vibe's categories are fetched (cheapest), replacing the old far-away
+        // results. NOTE: this is a deliberate, paid search per recenter press.
+        const vibe = VIBE_MAP[activeVibe];
+        const types = (vibe && vibe.needs) ? vibe.needs : [...loadedTypes];
+        fetchFromPlaces(true, configsForTypes(types), false);
         // Remove active state when user pans away
         map.addListenerOnce('dragstart', () => btn.classList.remove('active'));
       },
