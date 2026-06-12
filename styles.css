@@ -295,13 +295,17 @@
 
     .place-card {
       scroll-snap-align: start; flex-shrink: 0;
-      width: 172px; height: 220px;
+      width: 172px; height: 110px;
       border: var(--border); border-radius: var(--radius);
       box-shadow: var(--shadow);
       cursor: pointer; overflow: hidden;
       transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease;
       position: relative; background: #fff;
-      display: flex; flex-direction: column;
+      display: flex; flex-direction: row;
+    }
+    /* Thin category-colour strip down the left edge (subtle cue, replaces the big icon block) */
+    .card-accent {
+      width: 6px; flex-shrink: 0; align-self: stretch;
     }
     /* Top half: category colour + enlarged icon + type label (replaces photo) */
     .card-icon-half {
@@ -318,8 +322,8 @@
     /* Bottom half: white info panel with dark text */
     .card-info-half {
       flex: 1; min-height: 0;
-      padding: 10px 12px 12px;
-      display: flex; flex-direction: column;
+      padding: 10px 12px;
+      display: flex; flex-direction: column; justify-content: center;
     }
     .place-card:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 #111; }
     .place-card:hover .card-photo { transform: scale(1.05); }

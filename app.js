@@ -827,15 +827,14 @@ function buildCards(filter) {
     //   ? `<img class="card-photo" src="${p.photo}" alt="${p.name}" loading="lazy" onerror="this.remove()"/>`
     //   : '';
 
+    // Minimal card: thin category-colour strip + name, stars, short description.
+    // (Removed the large coloured icon block and the open/closed "N/A" line —
+    //  the strip keeps a subtle colour cue per category without the visual noise.)
     card.innerHTML = `
-      <div class="card-icon-half" style="background:${p.color}">
-        <div class="card-icon-glyph">${icon}</div>
-        <span class="card-type-label">${label}</span>
-      </div>
+      <div class="card-accent" style="background:${p.color}"></div>
       <div class="card-info-half">
         <div class="card-name">${p.name}</div>
         <div class="card-stars">${starStr(p.stars)} ${p.stars}</div>
-        ${statusHTML}
         ${p.desc ? `<div class="card-desc">${p.desc}</div>` : ''}
       </div>`;
 
