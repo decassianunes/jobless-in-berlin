@@ -28,6 +28,19 @@
     #topbar h1 { font-size: 26px; font-weight: 800; color: var(--black); letter-spacing: -0.5px; line-height: 1.1; }
     #topbar p  { font-size: 12px; font-weight: 500; color: #888; margin-top: 5px; line-height: 1.45; max-width: 520px; }
 
+    /* "Beta" sticker — used on the top title and the info-panel title. */
+    .beta-badge {
+      font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 99px;
+      border: var(--border); box-shadow: var(--shadow-sm);
+      background: #FFD600; color: var(--black);
+      white-space: nowrap;
+    }
+    /* Dark mode: keep the yellow chip + black text (high contrast, readable),
+       but swap the black border/shadow to light so the sticker stays defined
+       against the dark background — same convention as other dark-mode chrome. */
+    body.dark .beta-badge { border-color: #F0EBE3; box-shadow: 2px 2px 0 #F0EBE3; }
+
     .loader-ring {
       width: 28px; height: 28px; border-radius: 50%;
       border: 3px solid #ddd; border-top-color: var(--black);
@@ -543,6 +556,8 @@
     .saved-close-btn:hover { background: #111; color: #F5F0EB; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #111; }
     body.dark .saved-close-btn { background: #2A2521; color: #F0EBE3; border-color: #555; }
     body.dark .saved-close-btn:hover { background: #F0EBE3; color: #1A1714; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #F0EBE3; }
+    .saved-note { margin: 0; padding: 12px 20px 0; font-size: 12px; font-weight: 500; color: #999; line-height: 1.5; }
+    body.dark .saved-note { color: #888; }
     #saved-list { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
     .saved-empty { text-align: center; color: #666; font-size: 14px; font-weight: 500; padding: 40px 20px; line-height: 1.6; }
     body.dark .saved-empty { color: #bbb; }

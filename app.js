@@ -146,6 +146,7 @@ function configsForTypes(types) {
 // ── STATE ──
 let map, GPlace;
 let allPlaces = [], customMarkers = {}, activeVibe = null, searchQuery = '', sheetOpen = false;
+let lastViewKey = null;   // tracks the active vibe/search so the card strip only resets scroll on a real view change
 let selectedMarkerId = null;
 let currentPlace = null;
 // Store ONLY the Place ID (Google Maps ToS-compliant). Strip any old saved
@@ -165,11 +166,14 @@ async function fetchSavedDetails(id) {
   if (savedDetailCache[id]) return savedDetailCache[id];
   try {
     const place = new GPlace({ id });
-    await place.fetchFields({ fields: ['displayName', 'photos', 'formattedAddress'] });
+    // Fetch ONLY name + address for the Saved list (cheaper tier, no photo).
+    // The photo is the most expensive part, so we skip it here and load it only
+    // when the user actually opens the place (the detail page re-fetches it).
+    await place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
     const d = {
       name: place.displayName || '',
       address: place.formattedAddress || '',
-      photo: place.photos?.length ? place.photos[0].getURI({ maxWidth: 200 }) : '',
+      photo: '',
     };
     savedDetailCache[id] = d;
     return d;
@@ -653,7 +657,16 @@ async function searchCategory(cfg) {
     const filtered = (places || []).filter(p => {
       if (!p) return false;
       const t = Array.isArray(p.types) ? p.types : [];
-      return !t.some(pt => EXCLUDED_PLACE_TYPES.includes(pt));
+      if (t.some(pt => EXCLUDED_PLACE_TYPES.includes(pt))) return false;
+      // Text searches use locationBias (a soft preference, not a hard limit), so
+      // they can return places far outside the 10km radius — e.g. lakes scattered
+      // across Brandenburg. Drop anything beyond RADIUS so text results stay as
+      // local as the nearby-searches. (No extra API calls — pure local filter.)
+      if (cfg.textQuery && p.location) {
+        const d = distMeters(searchCenter, { lat: p.location.lat(), lng: p.location.lng() });
+        if (d > RADIUS) return false;
+      }
+      return true;
     });
     return filtered.map(p => { const pl = convertPlace(p, cfg.type); computeTags(pl); return pl; });
   } catch(e) { console.error('Places search failed for', cfg.type, ':', e?.message || e); return []; }
@@ -1024,8 +1037,10 @@ function cafeCheapRank(p) {
 
 function applyFilters(fitMap = false) {
   let visible = allPlaces.filter(matchesFilters);
-  // Default view (no vibe, no search): mix the categories so it isn't a wall of cafés.
-  if (!activeVibe && !searchQuery) visible = diversifyByType(visible);
+  // Mix the categories so a multi-type view (default, or a vibe spanning several
+  // types like "Linkedin focus" = cafés + libraries) interleaves instead of
+  // showing a wall of one type then the next. No-op for single-type vibes.
+  if (!searchQuery) visible = diversifyByType(visible);
   // "Coffee with myself": cheaper cafés float to the front (soft sort, never hides any).
   if (activeVibe === 'coffee') visible = visible.slice().sort((a, b) => cafeCheapRank(a) - cafeCheapRank(b));
 
@@ -1036,6 +1051,14 @@ function applyFilters(fitMap = false) {
 
   // Rebuild cards
   buildCards(visible);
+  // Refresh the scroll arrows after every rebuild. Only reset the carousel to
+  // the start when the VIEW changes (different pill / search) — not on a data
+  // refresh, so streaming results don't yank the user back while they scroll.
+  const cardsEl = document.getElementById('cards');
+  const viewKey = (activeVibe || '') + '|' + (searchQuery || '');
+  if (cardsEl && viewKey !== lastViewKey) cardsEl.scrollLeft = 0;
+  lastViewKey = viewKey;
+  if (window.updateCardScrollButtons) requestAnimationFrame(window.updateCardScrollButtons);
 
   // Only fit map bounds when user explicitly selects a vibe, not on data refresh
   if (fitMap && visible.length > 1 && map) {
@@ -1171,6 +1194,10 @@ function collapseSheet() { document.getElementById('sheet').classList.add('colla
     btnPrev.classList.toggle('hidden', cards.scrollLeft <= 10);
     btnNext.classList.toggle('hidden', cards.scrollLeft + cards.clientWidth >= cards.scrollWidth - 10);
   }
+  // Expose so applyFilters can refresh the arrows after every card rebuild —
+  // otherwise the left arrow can stay visible (overlapping/cutting the first
+  // card) even after the list resets to the start.
+  window.updateCardScrollButtons = updateButtons;
 
   btnPrev.addEventListener('click', () => { cards.scrollBy({ left: -300, behavior: 'smooth' }); });
   btnNext.addEventListener('click', () => { cards.scrollBy({ left:  300, behavior: 'smooth' }); });
