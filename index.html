@@ -31,7 +31,7 @@
 
 <div id="topbar">
   <div style="flex:1">
-    <h1>Jobless in Berlin 🇩🇪</h1>
+    <h1>Jobless in Berlin</h1>
     <p>Places to go while you find your feet.</p>
   </div>
   <div id="loader" class="loader-ring" style="display:none"></div>
@@ -45,8 +45,12 @@
     <button id="vibes-prev" onclick="document.getElementById('vibes-scroll').scrollBy({left:-200,behavior:'smooth'})">‹</button>
   </div>
   <div id="vibes-scroll">
-    <button class="vibe-pill active" data-vibe="all" onclick="setVibe('all')"><span class="pill-emoji">📍</span>All</button>
-    <button class="vibe-pill" data-vibe="myself"   onclick="setVibe('myself')"><span class="pill-emoji">🧍</span>Me and myself</button>
+    <!-- "All" pill removed on purpose: as the LAST pill it's poor UX, and as a
+         first action it's the most expensive (loads all 6 categories at once).
+         Kept here commented so it can be restored if ever wanted.
+    <button class="vibe-pill" data-vibe="all" onclick="setVibe('all')"><span class="pill-emoji">📍</span>All</button>
+    -->
+    <button class="vibe-pill active" data-vibe="coffee" onclick="setVibe('coffee')"><span class="pill-emoji">☕</span>Coffee with myself</button>
     <button class="vibe-pill" data-vibe="linkedin" onclick="setVibe('linkedin')"><span class="pill-emoji">💻</span>Linkedin focus</button>
     <button class="vibe-pill" data-vibe="sun"      onclick="setVibe('sun')"><span class="pill-emoji">☀️</span>Finally some sun</button>
     <button class="vibe-pill" data-vibe="sweat"    onclick="setVibe('sweat')"><span class="pill-emoji">🏃</span>Sweat the anxiety</button>
@@ -86,7 +90,10 @@
   <div id="info-panel-header">
     <button class="saved-close-btn" onclick="closeInfo()">←</button>
     <div>
-      <h2>Jobless in Berlin 🇩🇪</h2>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <h2 style="margin: 0;">Jobless in Berlin</h2>
+        <span style="font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; border: var(--border); box-shadow: var(--shadow-sm); background: #FFD600; color: var(--black);">Beta</span>
+      </div>
       <p style="font-size: 12px; font-weight: 600; color: #aaa; margin: 2px 0 0;">v1.0 · still growing</p>
     </div>
   </div>
@@ -114,7 +121,7 @@
 
     <!-- Disclaimer -->
     <div class="info-box" style="background: #EDE8E2; border-radius: 14px; padding: 14px 18px; border: var(--border);">
-      <p class="info-disclaimer-text" style="font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500; color: #666;">⚠️ The list of places comes from Google Reviews. We don't control the content or quality — always double-check before you go. If you spot something wrong, please send us an email.</p>
+      <p class="info-disclaimer-text" style="font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500; color: #666;">⚠️ The list of places comes from Google Maps. We don't control the content or quality — always double-check before you go. If you spot something wrong, please send us an email.</p>
     </div>
 
     <!-- Made by -->

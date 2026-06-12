@@ -29,6 +29,10 @@ const MAP_STYLES_DARK = [
   { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3A3530' }] },
 ];
 const RADIUS = 10000;
+// Don't offer a search when the map is zoomed out past this — at a wide,
+// regional view a single search radius covers too little of what's on screen
+// to be worth the request. Saves API calls (and money). Tunable.
+const MIN_SEARCH_ZOOM = 12;
 
 const CAT_COLOR = {
   cafe:      '#FF9500',
@@ -117,19 +121,23 @@ const CAT_TAG_DEFAULTS = {
 // `needs` = the place types each vibe requires. Core types (loaded on first
 // paint) are omitted; only the extra types a vibe pulls in are listed, so
 // tapping the vibe fetches just those on demand (lazy-load → fewer API calls).
+// Because core types are NO LONGER preloaded, every pill must list EVERY place
+// type it needs in `needs` — those are fetched additively (merge=true) the first
+// time the pill is tapped, and never re-fetched in the same session.
 const VIBE_MAP = {
-  myself:   { tags: ['solo', 'quiet'],     needs: ['gym', 'pool'] },
-  linkedin: { tags: ['workfriendly'],      needs: [] },
-  sun:      { tags: ['outdoor', 'weather'], needs: ['pool'] },
-  sweat:    { tags: ['active'],            needs: ['gym', 'pool'] },
-  germany:  { type: 'jobcenter',           needs: ['jobcenter'] },
-  wine:     { type: 'bar',                 needs: [] },
+  coffee:   { type: 'cafe',                 needs: ['cafe'] },
+  linkedin: { tags: ['workfriendly'],       needs: ['cafe', 'library'] },
+  sun:      { tags: ['outdoor', 'weather'], needs: ['park', 'pool'] },
+  sweat:    { tags: ['active'],             needs: ['gym', 'pool'] },
+  germany:  { type: 'jobcenter',            needs: ['jobcenter'] },
+  wine:     { type: 'bar',                  needs: ['bar'] },
 };
 
-// Loaded on first paint so the default "All" map looks populated.
+// Full set used only if the (currently commented-out) "All" pill is restored.
 const CORE_TYPES = ['cafe', 'park', 'library', 'museum', 'bar'];
-// Which place types are currently loaded into allPlaces (starts as core).
-let loadedTypes = new Set(CORE_TYPES);
+// Which place types are currently loaded into allPlaces. We now land on cafés
+// ONLY (1 search instead of 6) — everything else loads on demand per pill.
+let loadedTypes = new Set(['cafe']);
 // The search configs that produce a given set of types.
 function configsForTypes(types) {
   return SEARCH_CONFIGS.filter(c => types.includes(c.type));
@@ -484,9 +492,10 @@ async function initMap() {
   const searchBtn = document.getElementById('search-area-btn');
   if (searchBtn) searchBtn.addEventListener('click', searchThisArea);
 
+  activeVibe = 'coffee';   // land on the cheap café view (1 search, not 6)
   useFallback();           // instant content
   await locateUser();      // center search on the user (waits up to 8s, else Alexanderplatz)
-  fetchFromPlaces();       // live results around the user
+  fetchFromPlaces();       // live results around the user (only cafés are loaded)
 }
 
 // Holds the map center the "Search here" button would search, set when we offer it.
@@ -496,6 +505,7 @@ let pendingSearchCenter = null;
 // Same safety guards as before — just no longer triggers a fetch by itself.
 function searchableCenter() {
   if (fetching || flying || !lastSearchCenter) return null;  // skip during a fetch, a fly-in, or before first load
+  if (map.getZoom() < MIN_SEARCH_ZOOM) return null;          // zoomed out too far — not worth a request
   const c = map.getCenter();
   if (!c) return null;
   const center = { lat: c.lat(), lng: c.lng() };
@@ -899,11 +909,15 @@ function matchesFilters(p) {
   }
   // Vibe filter
   if (!activeVibe) return true;
-  // Don't include hardcoded fallback places in vibe results — their locations
-  // are fixed Berlin landmarks and may be far from the user's actual location.
-  if (p.isFallback) return false;
   const v = VIBE_MAP[activeVibe];
+  // Type-based vibes (café, bar, jobcenter) may show fallback places of the
+  // matching type — they give instant café content on the landing while the
+  // live search loads. Tag-based vibes still exclude fallbacks, because the
+  // fallbacks' tags are unreliable/derived, not from real reviews.
   if (v.type) return p.type === v.type;
+  // Don't include hardcoded fallback places in tag-based vibe results — their
+  // locations are fixed Berlin landmarks and may be far from the user.
+  if (p.isFallback) return false;
   return v.tags.some(tagId => p.tags.some(t => t.id === tagId));
 }
 
@@ -977,8 +991,43 @@ async function setVibe(vibeId) {
   }
 }
 
+// Interleave places by category (round-robin) so the front of the list is a
+// diverse mix — café, park, library, museum, bar, café… — instead of all the
+// cafés clustered first. Used only for the default "Close to you" view.
+function diversifyByType(list) {
+  const groups = {};
+  list.forEach(p => { (groups[p.type] = groups[p.type] || []).push(p); });
+  const buckets = Object.values(groups);
+  const out = [];
+  let added = true;
+  while (added) {
+    added = false;
+    for (const b of buckets) {
+      if (b.length) { out.push(b.shift()); added = true; }
+    }
+  }
+  return out;
+}
+
+// Rank a café cheaper-first using Google's priceLevel WHEN it exists. Google
+// rarely returns priceLevel for cafés, so this only nudges the few that DO
+// report cheap/inexpensive to the front — it never hides the rest (that was the
+// "Wallet is crying" empty-screen trap). Unknown price = neutral middle.
+function cafeCheapRank(p) {
+  const pl = p.priceLevel;
+  if (pl == null) return 1;                       // unknown → middle, stays visible
+  const s = String(pl).toUpperCase();
+  if (s.includes('FREE') || s.includes('INEXPENSIVE') || pl === 0 || pl === 1) return 0; // cheap → front
+  if (s.includes('MODERATE') || pl === 2) return 1;
+  return 2;                                        // pricey → back, but still shown
+}
+
 function applyFilters(fitMap = false) {
-  const visible = allPlaces.filter(matchesFilters);
+  let visible = allPlaces.filter(matchesFilters);
+  // Default view (no vibe, no search): mix the categories so it isn't a wall of cafés.
+  if (!activeVibe && !searchQuery) visible = diversifyByType(visible);
+  // "Coffee with myself": cheaper cafés float to the front (soft sort, never hides any).
+  if (activeVibe === 'coffee') visible = visible.slice().sort((a, b) => cafeCheapRank(a) - cafeCheapRank(b));
 
   // Show/hide markers
   Object.entries(customMarkers).forEach(([id, m]) => {
