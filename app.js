@@ -123,7 +123,6 @@ const VIBE_MAP = {
   sun:      { tags: ['outdoor', 'weather'], needs: ['pool'] },
   sweat:    { tags: ['active'],            needs: ['gym', 'pool'] },
   germany:  { type: 'jobcenter',           needs: ['jobcenter'] },
-  mensa:    { type: 'mensa',               needs: ['mensa'] },
   wine:     { type: 'bar',                 needs: [] },
 };
 
@@ -563,7 +562,6 @@ const SEARCH_CONFIGS = [
   { type: 'jobcenter', textQuery: 'Jobcenter Berlin' },
   { type: 'jobcenter', textQuery: 'Volkshochschule Berlin' },
   { type: 'jobcenter', textQuery: 'Sprachschule Berlin' },
-  { type: 'mensa',     textQuery: 'Mensa Studierendenwerk Berlin' },
   { type: 'gym',       includedTypes: ['gym', 'fitness_center'] },
   { type: 'pool',      includedTypes: ['swimming_pool'] },
   { type: 'pool',      textQuery: 'Badesee Berlin' },
@@ -807,23 +805,25 @@ function buildCards(filter) {
 
     const statusHTML = p.hoursObj
       ? `<span class="card-status ${p.hoursObj.isOpen ? 'open' : 'closed'}">${p.hoursObj.isOpen ? '● Open' : '● Closed'}</span>`
-      : `<span class="card-status" style="color:rgba(255,255,255,0.5)">● N/A</span>`;
+      : `<span class="card-status closed">● N/A</span>`;
 
     const icon = TYPE_ICONS[p.type] || TYPE_ICONS.cafe;
-    // No photo → show the category icon on the category color. If a photo fails
-    // to load, onerror removes it and the icon underneath shows through.
-    card.style.background = p.color;
-    const imgTag = p.photo
-      ? `<img class="card-photo" src="${p.photo}" alt="${p.name}" loading="lazy" onerror="this.remove()"/>`
-      : '';
-    const cornerBlob = '';
+    const label = TYPE_LABELS[p.type] || '';
+
+    // PHOTOS ON STANDBY: cards show the category icon (top half) instead of a
+    // Google place photo, to avoid billable photo fetches while browsing. Photos
+    // still load on the detail page and saved items. To bring card photos back,
+    // uncomment imgTag below and place ${imgTag} inside the .card-icon-half div.
+    // const imgTag = p.photo
+    //   ? `<img class="card-photo" src="${p.photo}" alt="${p.name}" loading="lazy" onerror="this.remove()"/>`
+    //   : '';
 
     card.innerHTML = `
-      <div class="card-fallback-icon">${icon}</div>
-      ${imgTag}
-      <div class="card-overlay"></div>
-      ${cornerBlob}
-      <div class="card-content">
+      <div class="card-icon-half" style="background:${p.color}">
+        <div class="card-icon-glyph">${icon}</div>
+        <span class="card-type-label">${label}</span>
+      </div>
+      <div class="card-info-half">
         <div class="card-name">${p.name}</div>
         <div class="card-stars">${starStr(p.stars)} ${p.stars}</div>
         ${statusHTML}

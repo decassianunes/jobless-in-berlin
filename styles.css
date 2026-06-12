@@ -300,7 +300,26 @@
       box-shadow: var(--shadow);
       cursor: pointer; overflow: hidden;
       transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease;
-      position: relative; background: #222;
+      position: relative; background: #fff;
+      display: flex; flex-direction: column;
+    }
+    /* Top half: category colour + enlarged icon + type label (replaces photo) */
+    .card-icon-half {
+      height: 96px; flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      position: relative;
+    }
+    .card-icon-glyph { line-height: 0; }
+    .card-icon-glyph svg { width: 40px; height: 40px; }
+    .card-type-label {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.95);
+    }
+    /* Bottom half: white info panel with dark text */
+    .card-info-half {
+      flex: 1; min-height: 0;
+      padding: 10px 12px 12px;
+      display: flex; flex-direction: column;
     }
     .place-card:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 #111; }
     .place-card:hover .card-photo { transform: scale(1.05); }
@@ -335,17 +354,22 @@
       position: absolute; bottom: 0; left: 0; right: 0;
       padding: 12px 12px 10px; z-index: 2;
     }
-    .card-name   { font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 3px; }
-    .card-stars  { font-size: 11px; font-weight: 700; color: #FFD600; margin-bottom: 2px; }
+    .card-name   { font-size: 13px; font-weight: 800; color: #111; line-height: 1.2; margin-bottom: 3px; }
+    .card-stars  { font-size: 11px; font-weight: 700; color: #B8860B; margin-bottom: 2px; }
     .card-status { font-size: 10px; font-weight: 700; }
-    .card-status.open   { color: #6EF5A8; }
-    .card-status.closed { color: rgba(255,255,255,0.55); }
+    .card-status.open   { color: #1A9E5C; }
+    .card-status.closed { color: #999; }
     .card-desc {
-      font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.9);
+      font-size: 11px; font-weight: 600; color: #666;
       line-height: 1.3; margin-top: 4px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    /* Dark mode: keep the coloured icon-half, darken the info panel */
+    body.dark .place-card { background: #2A2521; }
+    body.dark .card-name { color: #F0EBE3; }
+    body.dark .card-desc { color: #bbb; }
+    body.dark .card-status.closed { color: #888; }
 
     /* ── DETAIL BACKDROP (desktop click-outside) ── */
     #detail-backdrop {
