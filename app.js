@@ -376,6 +376,9 @@ function updateLayout() {
   const catsH    = cats.offsetHeight;
   const navH = topbarH + catsH;
   controls.style.top = (navH + 12) + 'px';
+  // Park the "Search here" button just below the nav, centered over the map.
+  const searchBtn = document.getElementById('search-area-btn');
+  if (searchBtn) searchBtn.style.top = (navH + 12) + 'px';
   // --nav-height drives the expanded sheet height so it reaches up to (not under) the nav
   document.documentElement.style.setProperty('--nav-height', (topbarH + catsH) + 'px');
 }
@@ -470,27 +473,59 @@ async function initMap() {
     setVisible(v) { this.visible = v; if (this.div) this.div.style.display = v ? '' : 'none'; }
   };
 
-  // Re-search when the map settles after a pan/zoom, if moved far enough
+  // When the map settles after a pan/zoom, decide whether to OFFER a new search
+  // (show the "Search here" button). We never fetch automatically anymore.
   map.addListener('idle', () => {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(maybeRefetch, 700);
+    idleTimer = setTimeout(offerSearchIfMoved, 700);
   });
+
+  // Wire the "Search here" button: a tap runs ONE search at the current center.
+  const searchBtn = document.getElementById('search-area-btn');
+  if (searchBtn) searchBtn.addEventListener('click', searchThisArea);
 
   useFallback();           // instant content
   await locateUser();      // center search on the user (waits up to 8s, else Alexanderplatz)
   fetchFromPlaces();       // live results around the user
 }
 
-// Reload places when the user has navigated far from the last search center
-function maybeRefetch() {
-  if (fetching || flying || !lastSearchCenter) return;  // skip during a fetch, a fly-in, or before first load
+// Holds the map center the "Search here" button would search, set when we offer it.
+let pendingSearchCenter = null;
+
+// Returns the current map center if a fresh search there is warranted, else null.
+// Same safety guards as before — just no longer triggers a fetch by itself.
+function searchableCenter() {
+  if (fetching || flying || !lastSearchCenter) return null;  // skip during a fetch, a fly-in, or before first load
   const c = map.getCenter();
-  if (!c) return;
+  if (!c) return null;
   const center = { lat: c.lat(), lng: c.lng() };
-  if (!inBerlin(center.lat, center.lng)) return;           // stay inside Berlin — don't load places elsewhere
-  // In-session de-dupe: never re-run the searches for an area we already loaded.
-  if (searchedCenters.some(prev => distMeters(center, prev) < 2500)) return;
-  searchCenter = center;
+  if (!inBerlin(center.lat, center.lng)) return null;        // stay inside Berlin
+  // In-session de-dupe: never offer to re-search an area we already loaded.
+  if (searchedCenters.some(prev => distMeters(center, prev) < 2500)) return null;
+  return center;
+}
+
+// After the map settles: show the "Search here" button if a new search is
+// warranted, otherwise hide it. NEVER fetches on its own.
+function offerSearchIfMoved() {
+  const btn = document.getElementById('search-area-btn');
+  const center = searchableCenter();
+  if (center) {
+    pendingSearchCenter = center;
+    if (btn) btn.classList.add('visible');
+  } else {
+    pendingSearchCenter = null;
+    if (btn) btn.classList.remove('visible');
+  }
+}
+
+// Called only when the human taps "Search here": runs exactly one search.
+function searchThisArea() {
+  const btn = document.getElementById('search-area-btn');
+  if (btn) btn.classList.remove('visible');
+  if (!pendingSearchCenter) return;
+  searchCenter = pendingSearchCenter;
+  pendingSearchCenter = null;
   fetchFromPlaces(true);
 }
 
