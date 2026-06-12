@@ -569,10 +569,14 @@ const SEARCH_CONFIGS = [
   { type: 'bar',       textQuery: 'Kneipe Berlin' },
 ];
 
+// NOTE: 'paymentOptions' is an Enterprise+Atmosphere SKU field — requesting it
+// billed every search at the most expensive tier. Dropped it so searches bill at
+// the Enterprise tier instead (rating/hours/priceLevel stay, so cards keep real
+// stars + open/closed). Trade-off: lose the minor "cash only"/"card" tags.
 const PLACE_FIELDS = ['displayName','location','rating','photos',
                       'regularOpeningHours','formattedAddress',
                       'userRatingCount','id',
-                      'priceLevel','paymentOptions','types'];
+                      'priceLevel','types'];
 
 const EXCLUDED_PLACE_TYPES = ['lodging', 'hotel', 'motel', 'resort_hotel', 'bed_and_breakfast', 'extended_stay_hotel', 'hostel', 'spa'];
 
