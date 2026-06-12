@@ -689,8 +689,13 @@ async function fetchFromPlaces(isRefetch = false, configs = null, merge = false)
 async function ensureVibeLoaded(vibeId) {
   const v = VIBE_MAP[vibeId];
   if (!v || !v.needs) return;
+  if (!v.needs.filter(t => !loadedTypes.has(t)).length) return;  // nothing new — no API call
+  // Wait for any fetch already in flight (e.g. the initial load) to finish, so a
+  // vibe tap during the first load never starts a second fetch concurrently.
+  while (fetching) { await new Promise(r => setTimeout(r, 100)); }
+  // Re-check after waiting — the fetch that just finished may have covered these.
   const missing = v.needs.filter(t => !loadedTypes.has(t));
-  if (!missing.length) return;                 // already loaded — no API call
+  if (!missing.length) return;
   missing.forEach(t => loadedTypes.add(t));     // mark as loaded so we never refetch them here
   await fetchFromPlaces(true, configsForTypes(missing), true);  // fetch just the new types, merge in
 }
