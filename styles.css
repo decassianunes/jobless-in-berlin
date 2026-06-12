@@ -15,9 +15,7 @@
     /* ── MAP ── */
     #map { position: absolute; inset: 0; z-index: 0; }
     /* Hide Google Maps chrome we don't need */
-    .gm-style-cc, .gm-style-cc + div { display: none !important; }
     .gm-bundled-control .gmnoprint { display: none; }
-    #map a[href^="https://maps.google"] { display: none !important; }
 
     /* ── TOP BAR ── */
     #topbar {
