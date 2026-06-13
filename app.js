@@ -142,6 +142,14 @@ let loadedTypes = new Set(['cafe']);
 function configsForTypes(types) {
   return SEARCH_CONFIGS.filter(c => types.includes(c.type));
 }
+// The place types the currently-selected mood needs. Falls back to cafés (the
+// landing default) when no mood is active. Used by "Search here" / recenter so a
+// new-area search fetches ONLY the mood you're looking at — other moods then
+// lazy-load on tap, so you only pay per mood you actually open.
+function activeVibeTypes() {
+  const v = VIBE_MAP[activeVibe];
+  return (v && v.needs) ? v.needs : ['cafe'];
+}
 
 // ── STATE ──
 let map, GPlace;
@@ -581,7 +589,13 @@ function searchThisArea() {
   if (!pendingSearchCenter) return;
   searchCenter = pendingSearchCenter;
   pendingSearchCenter = null;
-  fetchFromPlaces(true);
+  // Fetch ONLY the mood you're looking at, at this new area (cheap — usually 1-2
+  // calls, not all 6). Reset loadedTypes to just this mood so other moods
+  // lazy-load fresh here when tapped — no stale far-away results, and you only
+  // pay for moods you actually open.
+  const types = activeVibeTypes();
+  loadedTypes = new Set(types);
+  fetchFromPlaces(true, configsForTypes(types), false);
 }
 
 // ── USER LOCATION ──
@@ -1519,10 +1533,21 @@ document.getElementById('zoom-out').addEventListener('click', () => { if (map) m
         // Load the active mood's places around the NEW spot, so recentering
         // actually shows pins near you instead of an empty map. Only the active
         // vibe's categories are fetched (cheapest), replacing the old far-away
-        // results. NOTE: this is a deliberate, paid search per recenter press.
-        const vibe = VIBE_MAP[activeVibe];
-        const types = (vibe && vibe.needs) ? vibe.needs : [...loadedTypes];
-        fetchFromPlaces(true, configsForTypes(types), false);
+        // results.
+        const types = activeVibeTypes();
+        // COST GUARD: if you haven't really moved since the last search (within
+        // ~1.5km of the area already in memory) AND every category you'd need is
+        // already loaded, there's nothing new to fetch — re-filter the cached
+        // results instead of paying for an identical search. Stores nothing
+        // (in-memory only), so it stays ToS-compliant.
+        const sameArea = lastSearchCenter && distMeters({ lat, lng }, lastSearchCenter) < 1500;
+        const typesLoaded = types.every(t => loadedTypes.has(t));
+        if (sameArea && typesLoaded) {
+          applyFilters();   // reuse in-memory allPlaces — no API call, no cost
+        } else {
+          loadedTypes = new Set(types);   // new area: only this mood loaded; others lazy-load on tap
+          fetchFromPlaces(true, configsForTypes(types), false);
+        }
         // Remove active state when user pans away
         map.addListenerOnce('dragstart', () => btn.classList.remove('active'));
       },
