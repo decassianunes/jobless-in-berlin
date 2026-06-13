@@ -285,26 +285,23 @@
     }
     #cards::-webkit-scrollbar { display: none; }
 
-    /* ── SCROLL BUTTONS (desktop only) ── */
+    /* ── SCROLL BUTTONS (all screen sizes) ── */
     .cards-scroll-btn {
-      display: none;
+      display: flex; align-items: center; justify-content: center;
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #F5F0EB; border: var(--border);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+      cursor: pointer; font-size: 16px; font-weight: 800; color: var(--black);
+      z-index: 5; transition: opacity 0.2s;
+      flex-shrink: 0;
     }
+    .cards-scroll-btn:hover { background: var(--black); color: #fff; }
+    .cards-scroll-btn:active { transform: translateY(-50%) translate(2px,2px); box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+    .cards-scroll-btn.hidden { opacity: 0; pointer-events: none; }
+    #cards-prev { left: 4px; }
+    #cards-next { right: 4px; }
     @media (min-width: 768px) {
-      .cards-scroll-btn {
-        display: flex; align-items: center; justify-content: center;
-        position: absolute; top: 50%; transform: translateY(-50%);
-        width: 36px; height: 36px; border-radius: 50%;
-        background: #F5F0EB; border: var(--border);
-        box-shadow: 0 4px 14px rgba(0,0,0,0.45);
-        cursor: pointer; font-size: 16px; font-weight: 800; color: var(--black);
-        z-index: 5; transition: opacity 0.2s;
-        flex-shrink: 0;
-      }
-      .cards-scroll-btn:hover { background: var(--black); color: #fff; }
-      .cards-scroll-btn:active { transform: translateY(-50%) translate(2px,2px); box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
-      .cards-scroll-btn.hidden { opacity: 0; pointer-events: none; }
-      #cards-prev { left: 4px; }
-      #cards-next { right: 4px; }
       #sheet { position: fixed; }
     }
 
