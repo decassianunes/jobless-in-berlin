@@ -643,6 +643,16 @@
     .cta-btn.primary { background: var(--black); color: white; }
     .cta-btn.secondary { background: white; color: var(--black); }
     .cta-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .schedule-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .schedule-label { font-size: 13px; font-weight: 800; color: var(--black); }
+    #d-visit-time {
+      width: 100%; padding: 12px 14px; border-radius: var(--radius);
+      border: var(--border); box-shadow: var(--shadow-sm);
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      background: white; color: var(--black);
+    }
+    body.dark .schedule-label { color: #F0EBE3; }
+    body.dark #d-visit-time { background: #2A2521; color: #F0EBE3; }
 
     .handle-wrap { padding: 14px 0 10px; cursor: grab; }
 

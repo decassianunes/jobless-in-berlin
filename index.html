@@ -184,7 +184,14 @@
       </div>
       <div id="d-hours-list" style="display:none;margin-top:10px"></div>
     </div>
-    <a id="d-gmaps" class="cta-btn primary" href="#" target="_blank">
+    <div class="schedule-row">
+      <label for="d-visit-time" class="schedule-label">📅 When do you want to go?</label>
+      <input id="d-visit-time" type="datetime-local" />
+    </div>
+    <button id="d-schedule" class="cta-btn primary" onclick="scheduleVisit(currentPlace)">
+      🗓️ Schedule visit
+    </button>
+    <a id="d-gmaps" class="cta-btn secondary" href="#" target="_blank">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
       </svg>

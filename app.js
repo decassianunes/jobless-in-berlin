@@ -1293,6 +1293,96 @@ function collapseSheet() { document.getElementById('sheet').classList.add('colla
   cards.addEventListener('click', e => { if (didDrag) { e.stopPropagation(); didDrag = false; } }, true);
 })();
 
+// ── SCHEDULE VISIT (client-side .ics, no API call, no cost) ──
+// Returns tomorrow 10:00 as a "datetime-local" value string: YYYY-MM-DDTHH:MM
+function defaultVisitTime() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(10, 0, 0, 0);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// Format a Date as floating local iCalendar time: YYYYMMDDTHHMMSS (no Z, no tz)
+function icsLocal(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+// Format a Date as UTC iCalendar time (for DTSTAMP): YYYYMMDDTHHMMSSZ
+function icsUTC(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+}
+
+// Escape text for an iCalendar field (RFC 5545): backslash, semicolon, comma, newlines
+function icsEscape(s) {
+  return String(s == null ? '' : s)
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+// Build the .ics text and hand it to the OS calendar. No network, no Google API.
+function scheduleVisit(p) {
+  if (!p) return;
+
+  // Read the chosen time; fall back to tomorrow 10:00 if empty/invalid.
+  const input = document.getElementById('d-visit-time');
+  let start = input && input.value ? new Date(input.value) : null;
+  if (!start || isNaN(start.getTime())) start = new Date(defaultVisitTime());
+  const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
+
+  const uid = `${(p.placeId || 'jib-' + Math.random().toString(36).slice(2))}@joblessberlin.de`;
+  const descLines = [`Planned with Jobless in Berlin.`];
+  if (p.gmUrl) descLines.push(p.gmUrl);
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Jobless in Berlin//EN',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${icsUTC(new Date())}`,
+    `DTSTART:${icsLocal(start)}`,
+    `DTEND:${icsLocal(end)}`,
+    `SUMMARY:${icsEscape('Visit ' + (p.name || 'a place'))}`,
+  ];
+  if (p.address) lines.push(`LOCATION:${icsEscape(p.address)}`);
+  if (p.lat != null && p.lng != null) lines.push(`GEO:${p.lat};${p.lng}`);
+  lines.push(`DESCRIPTION:${icsEscape(descLines.join('\n'))}`);
+  lines.push('END:VEVENT', 'END:VCALENDAR');
+
+  const ics = lines.join('\r\n');
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  const slug = (p.name || 'place').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'place';
+  const filename = `visit-${slug}.ics`;
+
+  // How the file reaches the calendar depends on the device — browsers won't let
+  // a web page launch a desktop calendar app, so:
+  //   • Phones (touch): open the .ics directly → the OS "Add Event" sheet pops up.
+  //   • Computers: download the .ics → the user double-clicks it and the OS opens
+  //     the calendar app. (A direct open on desktop just makes a useless tab.)
+  const isMobile = /Android|iP(hone|ad|od)|Mobile/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && !window.matchMedia('(pointer:fine)').matches);
+
+  if (isMobile) {
+    window.open(url, '_blank');
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 8000);
+}
+
 // ── DETAIL ──
 async function openDetail(p) {
   // Navigating away from search to view a place — reset search so it starts fresh next time
@@ -1330,6 +1420,11 @@ async function openDetail(p) {
   document.getElementById('detail').classList.add('open');
   document.getElementById('detail-backdrop').classList.add('open');
   document.body.classList.add('detail-open');
+
+  // Pre-fill the "Schedule visit" time picker to tomorrow 10:00 each time the
+  // detail page opens (a sensible default; the user can change it before saving).
+  const visitInput = document.getElementById('d-visit-time');
+  if (visitInput) visitInput.value = defaultVisitTime();
 
   // Fetch full details from Places API if not already loaded
   if (!p.detailLoaded && p.placeId && !p.placeId.startsWith('fb')) {
