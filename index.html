@@ -80,7 +80,7 @@
     <span class="sheet-label">Close to you. No excuses</span>
     <button id="saved-toggle" title="Saved places" onclick="openSaved()">Saved ❤️</button>
   </div>
-  <div style="position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:stretch;">
+  <div style="position:relative;overflow:hidden;display:flex;align-items:stretch;">
     <button id="cards-prev" class="cards-scroll-btn hidden">‹</button>
     <div id="cards"></div>
     <button id="cards-next" class="cards-scroll-btn">›</button>
@@ -141,9 +141,11 @@
   <div id="saved-drag-handle"><div class="handle"></div></div>
   <div id="saved-panel-header">
     <button class="saved-close-btn" onclick="closeSaved()">←</button>
-    <h2>Saved</h2>
+    <div style="flex:1">
+      <h2>Saved</h2>
+      <p class="saved-note">Saves just live here. Like a note on the fridge.</p>
+    </div>
   </div>
-  <p class="saved-note">Saves just live here. Like a note on the fridge.</p>
   <div id="saved-list"></div>
 </div>
 

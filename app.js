@@ -519,7 +519,18 @@ async function initMap() {
   // (show the "Search here" button). We never fetch automatically anymore.
   map.addListener('idle', () => {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(offerSearchIfMoved, 700);
+    idleTimer = setTimeout(offerSearchIfMoved, 400);
+  });
+
+  // Also re-evaluate WHILE the map is moving (throttled), so the "Search here"
+  // button appears as soon as you pan into a new area and stays visible the
+  // whole time you're navigating — not only after the map fully stops.
+  let lastOfferEval = 0;
+  map.addListener('center_changed', () => {
+    const now = Date.now();
+    if (now - lastOfferEval < 250) return;
+    lastOfferEval = now;
+    offerSearchIfMoved();
   });
 
   // Wire the "Search here" button: a tap runs ONE search at the current center.
