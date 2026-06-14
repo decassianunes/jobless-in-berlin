@@ -674,6 +674,8 @@
     }
     .sched-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
     #sched-times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .sched-actions { display: flex; gap: 8px; }
+    .sched-actions > * { flex: 1; margin-bottom: 0; }
     .sched-divider { border: none; border-top: 1.5px solid rgba(0,0,0,0.15); margin: 0 0 14px; }
     body.dark .sched-divider { border-top-color: rgba(255,255,255,0.18); }
     body.dark #d-hours-toggle { border-bottom-color: rgba(255,255,255,0.18); }

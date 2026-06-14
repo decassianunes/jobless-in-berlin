@@ -1349,6 +1349,9 @@ function updateSchedWhen() {
   const start = getActiveStart();
   const dateStr = start.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   el.textContent = `${dateStr} · ${String(start.getHours()).padStart(2, '0')}:00`;
+  // Keep the "Google Calendar" fallback link in sync with the current selection.
+  const gcal = document.getElementById('gcal-link');
+  if (gcal && currentPlace) gcal.href = buildGoogleCalendarUrl(currentPlace, start);
 }
 
 // Select a chip within a row (single-choice), then refresh the summary line.
@@ -1447,6 +1450,30 @@ function icsEscape(s) {
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
     .replace(/\r?\n/g, '\\n');
+}
+
+// Build a Google Calendar "render" URL so the visit can be added in one tap from
+// any browser on any platform — including non-Safari iPhone browsers where the
+// .ics file does not offer the native Calendar. No network, no Google API: it's
+// just a plain https link built from data already on the page. €0.
+function buildGoogleCalendarUrl(p, start) {
+  if (!p || !start) return '#';
+  const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
+  const descLines = ['Planned with Jobless in Berlin.'];
+  if (p.gmUrl) descLines.push(p.gmUrl);
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: 'Visit ' + (p.name || 'a place'),
+    // icsLocal() gives YYYYMMDDTHHMMSS (no Z); ctz tells Google to read it as
+    // Berlin local time, sidestepping any floating-time ambiguity.
+    dates: `${icsLocal(start)}/${icsLocal(end)}`,
+    ctz: 'Europe/Berlin',
+    details: descLines.join('\n'),
+  });
+  if (p.address) params.set('location', p.address);
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 // Build the .ics text and hand it to the OS calendar. No network, no Google API.
