@@ -622,11 +622,13 @@
     }
 
     .hours-block {
-      border: var(--border); border-radius: var(--radius);
-      box-shadow: var(--shadow-sm); background: white;
-      padding: 14px 16px; margin-bottom: 16px;
+      border: none; border-radius: 0;
+      box-shadow: none; background: none;
+      padding: 0; margin-bottom: 16px;
     }
-    .hours-block-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #888; margin-bottom: 8px; }
+    #d-hours-toggle { padding-bottom: 12px; border-bottom: 1.5px solid rgba(0,0,0,0.15); }
+    .hours-block-label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #222222; margin-bottom: 8px; }
+    body.dark .hours-block-label { color: #F0EBE3; }
     .hours-line { font-size: 13px; font-weight: 600; color: var(--black); line-height: 1.7; }
 
     .detail-desc { font-size: 14px; font-weight: 500; color: #555; line-height: 1.65; margin-bottom: 12px; }
@@ -642,6 +644,7 @@
     .cta-btn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 #111; }
     .cta-btn.primary { background: var(--black); color: white; }
     .cta-btn.secondary { background: white; color: var(--black); }
+    .cta-btn.save { background: #22C55E; color: #111; }
     .cta-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
     /* Schedule-visit modal — app-styled quick picks (no native date dropdown) */
     #schedule-backdrop {
@@ -670,6 +673,10 @@
       letter-spacing: 0.05em; margin: 0 0 8px;
     }
     .sched-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    #sched-times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .sched-divider { border: none; border-top: 1.5px solid rgba(0,0,0,0.15); margin: 0 0 14px; }
+    body.dark .sched-divider { border-top-color: rgba(255,255,255,0.18); }
+    body.dark #d-hours-toggle { border-bottom-color: rgba(255,255,255,0.18); }
     .sched-chip {
       font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
       padding: 9px 14px; border-radius: 99px; border: var(--border);
@@ -678,13 +685,52 @@
     }
     .sched-chip:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #111; }
     .sched-chip.active { background: var(--black); color: #fff; }
-    .sched-when { font-size: 14px; font-weight: 700; margin: 0 0 14px; }
+    .sched-when { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 16px; text-align: center; }
     body.dark #schedule-modal { background: #1A1714; border-color: #555; color: #F0EBE3; }
     body.dark .sched-header h2,
     body.dark .sched-close,
     body.dark .sched-when { color: #F0EBE3; }
     body.dark .sched-chip { background: #2A2521; color: #F0EBE3; }
     body.dark .sched-chip.active { background: #F0EBE3; color: #1A1714; }
+
+    /* ── Schedule visit: button that expands into a card in place ── */
+    .sched-card {
+      border: var(--border); border-radius: var(--radius);
+      background: #fff; box-shadow: var(--shadow); margin-bottom: 12px;
+    }
+    .sched-card-header {
+      width: 100%; display: flex; align-items: center; justify-content: center;
+      gap: 8px; font-family: inherit; font-size: 14px; font-weight: 800;
+      color: var(--black); background: none; border: none; cursor: pointer;
+      padding: 15px 18px;
+    }
+    .sched-card.open .sched-card-header { justify-content: space-between; font-size: 18px; padding-bottom: 6px; }
+    .sched-card-header .caret-icon { width: 16px; height: 16px; flex: none; transition: transform 0.25s ease; }
+    .sched-card.open .sched-card-header .caret-icon { transform: rotate(180deg); }
+    .sched-inline {
+      display: grid; grid-template-rows: 0fr; opacity: 0;
+      transition: grid-template-rows 0.28s ease, opacity 0.2s ease;
+    }
+    .sched-card.open .sched-inline { grid-template-rows: 1fr; opacity: 1; }
+    .sched-inline-inner { overflow: hidden; min-height: 0; padding: 0 18px; transition: padding 0.28s ease; }
+    .sched-card.open .sched-inline-inner { padding: 2px 18px 18px; }
+    body.dark .sched-card { background: #2A2521; border-color: #555; }
+    body.dark .sched-card-header { color: #F0EBE3; }
+    /* On phones the schedule modal becomes a bottom sheet (slides up). */
+    @media (max-width: 767px) {
+      #schedule-modal {
+        left: 0; right: 0; top: auto; bottom: 0;
+        width: 100%; max-width: none;
+        transform: translateY(100%);
+        border-radius: var(--radius) var(--radius) 0 0;
+        transition: transform 0.28s cubic-bezier(0.32,0.72,0,1), opacity 0.28s;
+      }
+      #schedule-modal.open { transform: translateY(0); }
+    }
+    /* When the picker is relocated into the bottom sheet, drop the inline-card
+       overflow/padding (the modal supplies its own padding, and we don't want
+       the button shadows clipped). */
+    #sched-sheet-host .sched-inline-inner { overflow: visible; min-height: 0; padding: 0; }
 
     .handle-wrap { padding: 14px 0 10px; cursor: grab; }
 

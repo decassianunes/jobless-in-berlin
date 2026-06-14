@@ -124,7 +124,7 @@
 
     <!-- Disclaimer -->
     <div class="info-box" style="background: #EDE8E2; border-radius: 14px; padding: 14px 18px; border: var(--border);">
-      <p class="info-disclaimer-text" style="font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500; color: #666;">⚠️ This app uses Google Maps Platform. The list of places comes from Google Maps — we don't control the content or quality, so always double-check before you go. If you spot something wrong, please send us an email.</p>
+      <p class="info-disclaimer-text" style="font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500; color: #666;">⚠️ This app uses Google Maps Platform. Place information like rating, price and directions is based on the Google Maps database — we don't control the content or quality, so always double-check before you go. If you spot something wrong, please send us an email.</p>
     </div>
 
     <!-- Made by -->
@@ -180,13 +180,44 @@
     <div id="d-hours-block" class="hours-block" style="display:none;margin-bottom:16px">
       <div id="d-hours-toggle" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
         <span class="hours-block-label" style="margin-bottom:0">Opening Hours</span>
-        <span id="d-hours-chevron" style="font-size:11px;color:#888;transition:transform 0.2s">▼</span>
+        <span id="d-hours-chevron" style="width:12px;height:12px;color:var(--black);transition:transform 0.2s;display:inline-block">
+          <svg class="caret-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true" style="width:12px;height:12px;display:block"><path d="M21.364,42.218l24.329,24.329c0.026,0.027,0.034,0.065,0.061,0.091c1.146,1.146,2.659,1.715,4.17,1.711c1.511,0.004,3.023-0.564,4.17-1.711c0.027-0.027,0.034-0.064,0.061-0.091l24.329-24.329c2.285-2.285,2.285-6.024,0-8.308s-6.024-2.285-8.308,0L49.923,54.161L29.672,33.91c-2.285-2.285-6.024-2.285-8.308,0S19.079,39.934,21.364,42.218z"/></svg>
+        </span>
       </div>
       <div id="d-hours-list" style="display:none;margin-top:10px"></div>
     </div>
-    <button id="d-schedule" class="cta-btn primary" onclick="openSchedule()">
-      🗓️ Schedule visit
-    </button>
+    <!-- Schedule visit: on desktop this button expands INTO a card in place;
+         on mobile (≤767px) the same content is relocated into a bottom sheet. -->
+    <div id="sched-card" class="sched-card">
+      <button id="d-schedule" class="sched-card-header" onclick="toggleSchedule()" aria-expanded="false">
+        <span class="sched-card-title">Schedule Visit</span>
+        <svg class="caret-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><path d="M21.364,42.218l24.329,24.329c0.026,0.027,0.034,0.065,0.061,0.091c1.146,1.146,2.659,1.715,4.17,1.711c1.511,0.004,3.023-0.564,4.17-1.711c0.027-0.027,0.034-0.064,0.061-0.091l24.329-24.329c2.285-2.285,2.285-6.024,0-8.308s-6.024-2.285-8.308,0L49.923,54.161L29.672,33.91c-2.285-2.285-6.024-2.285-8.308,0S19.079,39.934,21.364,42.218z"/></svg>
+      </button>
+      <div id="sched-inline" class="sched-inline">
+        <!-- This is the ONE picker block. It lives here on desktop and is moved
+             into the bottom-sheet host (#sched-sheet-host) on mobile, then back. -->
+        <div id="sched-content" class="sched-inline-inner">
+          <p class="sched-place" id="sched-place"></p>
+
+          <p class="sched-label">Which day?</p>
+          <!-- Day pills are built dynamically in JS (buildDayChips). -->
+          <div class="sched-row" id="sched-dates"></div>
+
+          <p class="sched-label">What time?</p>
+          <div class="sched-row" id="sched-times">
+            <button class="sched-chip active" data-hour="10" onclick="pickChip(this,'sched-times')">☕ Morning · 10:00</button>
+            <button class="sched-chip" data-hour="13" onclick="pickChip(this,'sched-times')">🍴 Midday · 13:00</button>
+            <button class="sched-chip" data-hour="16" onclick="pickChip(this,'sched-times')">🌤️ Afternoon · 16:00</button>
+            <button class="sched-chip" data-hour="19" onclick="pickChip(this,'sched-times')">🍷 Evening · 19:00</button>
+          </div>
+
+          <hr class="sched-divider"/>
+          <p class="sched-when" id="sched-when"></p>
+
+          <button class="cta-btn save" onclick="confirmSchedule()" style="margin-bottom:0">Save</button>
+        </div>
+      </div>
+    </div>
     <a id="d-gmaps" class="cta-btn secondary" href="#" target="_blank">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
@@ -196,34 +227,15 @@
   </div>
 </div>
 
-<!-- Schedule-visit modal: app-styled quick picks, no native date picker -->
+<!-- Mobile bottom sheet (≤767px): on open, the #sched-content block above is
+     relocated into #sched-sheet-host; on close it returns to the inline card. -->
 <div id="schedule-backdrop" onclick="closeSchedule()"></div>
 <div id="schedule-modal">
   <div class="sched-header">
     <h2>Plan a visit</h2>
     <button class="sched-close" onclick="closeSchedule()" title="Close">✕</button>
   </div>
-  <p class="sched-place" id="sched-place"></p>
-
-  <p class="sched-label">Which day?</p>
-  <div class="sched-row" id="sched-dates">
-    <button class="sched-chip" data-datekey="today" onclick="pickChip(this,'sched-dates')">Today</button>
-    <button class="sched-chip active" data-datekey="tomorrow" onclick="pickChip(this,'sched-dates')">Tomorrow</button>
-    <button class="sched-chip" data-datekey="weekend" onclick="pickChip(this,'sched-dates')">This weekend</button>
-    <button class="sched-chip" data-datekey="nextweek" onclick="pickChip(this,'sched-dates')">Next week</button>
-  </div>
-
-  <p class="sched-label">What time?</p>
-  <div class="sched-row" id="sched-times">
-    <button class="sched-chip active" data-hour="10" onclick="pickChip(this,'sched-times')">☕ Morning · 10:00</button>
-    <button class="sched-chip" data-hour="13" onclick="pickChip(this,'sched-times')">🍴 Midday · 13:00</button>
-    <button class="sched-chip" data-hour="16" onclick="pickChip(this,'sched-times')">🌤️ Afternoon · 16:00</button>
-    <button class="sched-chip" data-hour="19" onclick="pickChip(this,'sched-times')">🍷 Evening · 19:00</button>
-  </div>
-
-  <p class="sched-when" id="sched-when"></p>
-
-  <button class="cta-btn primary" onclick="confirmSchedule()" style="margin-bottom:0">🗓️ Add to calendar</button>
+  <div id="sched-sheet-host"></div>
 </div>
 
 <script src="app.js"></script>

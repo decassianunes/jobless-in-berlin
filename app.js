@@ -1295,22 +1295,43 @@ function collapseSheet() { document.getElementById('sheet').classList.add('colla
 
 // ── SCHEDULE VISIT (app-styled modal → client-side .ics, no API call, no cost) ──
 
-// Turn a quick-pick key into a real Date (midnight). 'weekend' = upcoming
-// Saturday, 'nextweek' = next Monday.
-function resolveDateKey(key) {
+// Turn a day-offset (0 = today, 1 = tomorrow, …) into a real Date (midnight).
+function dateFromOffset(offset) {
   const d = new Date(); d.setHours(0, 0, 0, 0);
-  if (key === 'tomorrow') { d.setDate(d.getDate() + 1); }
-  else if (key === 'weekend') { d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7)); }
-  else if (key === 'nextweek') { d.setDate(d.getDate() + (((1 - d.getDay() + 7) % 7) || 7)); }
-  // 'today' (or anything else) → leave as today
+  d.setDate(d.getDate() + offset);
   return d;
+}
+
+// Build the "Which day?" pills dynamically, starting from TOMORROW (not today).
+// We don't validate the time-of-day, so offering "Today" could let someone pick
+// a slot (e.g. 10:00) that has already passed. Starting tomorrow keeps every
+// offered time in the future. Shows 5 days: Tomorrow · then the real weekday
+// name (Tue, Wed, …), weekends included. The first pill (Tomorrow) starts active.
+function buildDayChips() {
+  const row = document.getElementById('sched-dates');
+  if (!row) return;
+  const FIRST = 1;            // start at tomorrow (offset 1)
+  const DAYS = 7;             // show 7 consecutive days → always covers a weekend
+  row.innerHTML = '';
+  for (let offset = FIRST; offset < FIRST + DAYS; offset++) {
+    const d = dateFromOffset(offset);
+    const label = offset === 1
+      ? 'Tomorrow'
+      : d.toLocaleDateString('en-GB', { weekday: 'long' });
+    const btn = document.createElement('button');
+    btn.className = 'sched-chip' + (offset === FIRST ? ' active' : '');
+    btn.dataset.dayoffset = offset;
+    btn.textContent = label;
+    btn.onclick = function () { pickChip(btn, 'sched-dates'); };
+    row.appendChild(btn);
+  }
 }
 
 // Read the currently-selected day + time chips and return the start Date.
 function getActiveStart() {
   const dEl = document.querySelector('#sched-dates .sched-chip.active');
   const tEl = document.querySelector('#sched-times .sched-chip.active');
-  const start = resolveDateKey(dEl ? dEl.dataset.datekey : 'tomorrow');
+  const start = dateFromOffset(dEl ? parseInt(dEl.dataset.dayoffset, 10) : 1);
   start.setHours(tEl ? parseInt(tEl.dataset.hour, 10) : 10, 0, 0, 0);
   return start;
 }
@@ -1331,18 +1352,68 @@ function pickChip(el, rowId) {
   updateSchedWhen();
 }
 
-function openSchedule() {
+// true when the viewport is phone-sized → use the bottom sheet instead of the
+// inline expanding card.
+function isMobileSched() {
+  return window.matchMedia('(max-width: 767px)').matches;
+}
+
+// Fill the picker (place name, day pills, summary) before showing it.
+function prepSchedContent() {
   if (!currentPlace) return;
   const nameEl = document.getElementById('sched-place');
   if (nameEl) nameEl.textContent = currentPlace.name || 'this place';
+  buildDayChips();
   updateSchedWhen();
+}
+
+// Header tap on the Schedule card.
+// Desktop: toggle the inline card open/closed.
+// Mobile: open the bottom sheet (closing is handled by the backdrop / ✕).
+function toggleSchedule() {
+  if (!currentPlace) return;
+  if (isMobileSched()) {
+    openSchedule();
+    return;
+  }
+  const card = document.getElementById('sched-card');
+  const btn = document.getElementById('d-schedule');
+  if (!card) return;
+  const willOpen = !card.classList.contains('open');
+  if (willOpen) {
+    prepSchedContent();
+    card.classList.add('open');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  } else {
+    card.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+// Mobile only: relocate the single #sched-content block into the bottom-sheet
+// host and slide the sheet up.
+function openSchedule() {
+  if (!currentPlace) return;
+  prepSchedContent();
+  const content = document.getElementById('sched-content');
+  const host = document.getElementById('sched-sheet-host');
+  if (content && host) host.appendChild(content);
   document.getElementById('schedule-modal').classList.add('open');
   document.getElementById('schedule-backdrop').classList.add('open');
 }
 
+// Close the bottom sheet AND collapse the inline card, returning the content
+// block to its home inside #sched-inline so IDs stay unique.
 function closeSchedule() {
   document.getElementById('schedule-modal').classList.remove('open');
   document.getElementById('schedule-backdrop').classList.remove('open');
+  const content = document.getElementById('sched-content');
+  const home = document.getElementById('sched-inline');
+  if (content && home && content.parentElement !== home) home.appendChild(content);
+  const card = document.getElementById('sched-card');
+  if (card) card.classList.remove('open');
+  const btn = document.getElementById('d-schedule');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 
 function confirmSchedule() {
