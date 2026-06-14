@@ -677,7 +677,11 @@ const SEARCH_CONFIGS = [
 // billed every search at the most expensive tier. Dropped it so searches bill at
 // the Enterprise tier instead (rating/hours/priceLevel stay, so cards keep real
 // stars + open/closed). Trade-off: lose the minor "cash only"/"card" tags.
-const PLACE_FIELDS = ['displayName','location','rating','photos',
+// NOTE: 'photos' is deliberately NOT requested here. Asking for photos on every
+// search result loaded a billable Place Photo for ~20 places per search (the bulk
+// of the API bill). The hero photo is instead fetched only when a place's detail
+// page is opened (see openDetail → fetchFields with 'photos'). Cards show no photo.
+const PLACE_FIELDS = ['displayName','location','rating',
                       'regularOpeningHours','formattedAddress',
                       'userRatingCount','id',
                       'priceLevel','types'];
@@ -730,7 +734,9 @@ async function searchCategory(cfg) {
 function convertPlace(place, type) {
   const lat = place.location.lat();
   const lng = place.location.lng();
-  const photo = place.photos?.[0]?.getURI?.({ maxWidth: 800 }) || place.photos?.[0]?.getUrl?.({ maxWidth: 800 }) || null;
+  // No photo at search time — it would bill a Place Photo per result. The detail
+  // page fetches the hero photo on open instead.
+  const photo = null;
   const hash  = hashStr(place.id);
   const isOpen = typeof place.regularOpeningHours?.isOpen === 'function' ? place.regularOpeningHours.isOpen() : null;
   const hours = place.regularOpeningHours?.weekdayDescriptions || [];
