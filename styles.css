@@ -674,8 +674,14 @@
     }
     .sched-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
     #sched-times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .sched-actions { display: flex; gap: 8px; }
-    .sched-actions > * { flex: 1; margin-bottom: 0; }
+    .sched-actions { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .sched-actions .cta-btn { width: 100%; margin-bottom: 0; }
+    .sched-ics-link {
+      background: none; border: none; box-shadow: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--black); opacity: 0.6;
+      text-decoration: underline; padding: 6px 4px; font-family: inherit;
+    }
+    .sched-ics-link:hover { opacity: 0.85; }
     .sched-divider { border: none; border-top: 1.5px solid rgba(0,0,0,0.15); margin: 0 0 14px; }
     body.dark .sched-divider { border-top-color: rgba(255,255,255,0.18); }
     body.dark #d-hours-toggle { border-bottom-color: rgba(255,255,255,0.18); }
