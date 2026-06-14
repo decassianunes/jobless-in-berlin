@@ -643,16 +643,48 @@
     .cta-btn.primary { background: var(--black); color: white; }
     .cta-btn.secondary { background: white; color: var(--black); }
     .cta-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .schedule-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-    .schedule-label { font-size: 13px; font-weight: 800; color: var(--black); }
-    #d-visit-time {
-      width: 100%; padding: 12px 14px; border-radius: var(--radius);
-      border: var(--border); box-shadow: var(--shadow-sm);
-      font-family: inherit; font-size: 14px; font-weight: 600;
-      background: white; color: var(--black);
+    /* Schedule-visit modal — app-styled quick picks (no native date dropdown) */
+    #schedule-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 60;
+      background: rgba(0,0,0,0.35);
     }
-    body.dark .schedule-label { color: #F0EBE3; }
-    body.dark #d-visit-time { background: #2A2521; color: #F0EBE3; }
+    #schedule-backdrop.open { display: block; }
+    #schedule-modal {
+      position: fixed; z-index: 61; left: 50%; top: 50%;
+      transform: translate(-50%, -46%); opacity: 0; pointer-events: none;
+      width: calc(100% - 36px); max-width: 360px; box-sizing: border-box;
+      background: #F5F0EB; border: var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 20px;
+      transition: transform 0.22s cubic-bezier(0.32,0.72,0,1), opacity 0.22s;
+    }
+    #schedule-modal.open { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
+    .sched-header { display: flex; align-items: center; justify-content: space-between; }
+    .sched-header h2 { margin: 0; font-size: 18px; font-weight: 800; }
+    .sched-close {
+      background: none; border: none; font-size: 17px; cursor: pointer;
+      color: var(--black); padding: 4px; line-height: 1;
+    }
+    .sched-place { font-size: 13px; font-weight: 600; color: #888; margin: 2px 0 18px; }
+    .sched-label {
+      font-size: 13px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.05em; margin: 0 0 8px;
+    }
+    .sched-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .sched-chip {
+      font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+      padding: 9px 14px; border-radius: 99px; border: var(--border);
+      background: #fff; color: var(--black); box-shadow: var(--shadow-sm);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .sched-chip:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #111; }
+    .sched-chip.active { background: var(--black); color: #fff; }
+    .sched-when { font-size: 14px; font-weight: 700; margin: 0 0 14px; }
+    body.dark #schedule-modal { background: #1A1714; border-color: #555; color: #F0EBE3; }
+    body.dark .sched-header h2,
+    body.dark .sched-close,
+    body.dark .sched-when { color: #F0EBE3; }
+    body.dark .sched-chip { background: #2A2521; color: #F0EBE3; }
+    body.dark .sched-chip.active { background: #F0EBE3; color: #1A1714; }
 
     .handle-wrap { padding: 14px 0 10px; cursor: grab; }
 

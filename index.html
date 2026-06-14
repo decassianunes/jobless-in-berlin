@@ -184,11 +184,7 @@
       </div>
       <div id="d-hours-list" style="display:none;margin-top:10px"></div>
     </div>
-    <div class="schedule-row">
-      <label for="d-visit-time" class="schedule-label">📅 When do you want to go?</label>
-      <input id="d-visit-time" type="datetime-local" />
-    </div>
-    <button id="d-schedule" class="cta-btn primary" onclick="scheduleVisit(currentPlace)">
+    <button id="d-schedule" class="cta-btn primary" onclick="openSchedule()">
       🗓️ Schedule visit
     </button>
     <a id="d-gmaps" class="cta-btn secondary" href="#" target="_blank">
@@ -198,6 +194,36 @@
       Open with Google Maps
     </a>
   </div>
+</div>
+
+<!-- Schedule-visit modal: app-styled quick picks, no native date picker -->
+<div id="schedule-backdrop" onclick="closeSchedule()"></div>
+<div id="schedule-modal">
+  <div class="sched-header">
+    <h2>Plan a visit</h2>
+    <button class="sched-close" onclick="closeSchedule()" title="Close">✕</button>
+  </div>
+  <p class="sched-place" id="sched-place"></p>
+
+  <p class="sched-label">Which day?</p>
+  <div class="sched-row" id="sched-dates">
+    <button class="sched-chip" data-datekey="today" onclick="pickChip(this,'sched-dates')">Today</button>
+    <button class="sched-chip active" data-datekey="tomorrow" onclick="pickChip(this,'sched-dates')">Tomorrow</button>
+    <button class="sched-chip" data-datekey="weekend" onclick="pickChip(this,'sched-dates')">This weekend</button>
+    <button class="sched-chip" data-datekey="nextweek" onclick="pickChip(this,'sched-dates')">Next week</button>
+  </div>
+
+  <p class="sched-label">What time?</p>
+  <div class="sched-row" id="sched-times">
+    <button class="sched-chip active" data-hour="10" onclick="pickChip(this,'sched-times')">☕ Morning · 10:00</button>
+    <button class="sched-chip" data-hour="13" onclick="pickChip(this,'sched-times')">🍴 Midday · 13:00</button>
+    <button class="sched-chip" data-hour="16" onclick="pickChip(this,'sched-times')">🌤️ Afternoon · 16:00</button>
+    <button class="sched-chip" data-hour="19" onclick="pickChip(this,'sched-times')">🍷 Evening · 19:00</button>
+  </div>
+
+  <p class="sched-when" id="sched-when"></p>
+
+  <button class="cta-btn primary" onclick="confirmSchedule()" style="margin-bottom:0">🗓️ Add to calendar</button>
 </div>
 
 <script src="app.js"></script>

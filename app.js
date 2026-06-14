@@ -1293,14 +1293,62 @@ function collapseSheet() { document.getElementById('sheet').classList.add('colla
   cards.addEventListener('click', e => { if (didDrag) { e.stopPropagation(); didDrag = false; } }, true);
 })();
 
-// ── SCHEDULE VISIT (client-side .ics, no API call, no cost) ──
-// Returns tomorrow 10:00 as a "datetime-local" value string: YYYY-MM-DDTHH:MM
-function defaultVisitTime() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  d.setHours(10, 0, 0, 0);
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+// ── SCHEDULE VISIT (app-styled modal → client-side .ics, no API call, no cost) ──
+
+// Turn a quick-pick key into a real Date (midnight). 'weekend' = upcoming
+// Saturday, 'nextweek' = next Monday.
+function resolveDateKey(key) {
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  if (key === 'tomorrow') { d.setDate(d.getDate() + 1); }
+  else if (key === 'weekend') { d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7)); }
+  else if (key === 'nextweek') { d.setDate(d.getDate() + (((1 - d.getDay() + 7) % 7) || 7)); }
+  // 'today' (or anything else) → leave as today
+  return d;
+}
+
+// Read the currently-selected day + time chips and return the start Date.
+function getActiveStart() {
+  const dEl = document.querySelector('#sched-dates .sched-chip.active');
+  const tEl = document.querySelector('#sched-times .sched-chip.active');
+  const start = resolveDateKey(dEl ? dEl.dataset.datekey : 'tomorrow');
+  start.setHours(tEl ? parseInt(tEl.dataset.hour, 10) : 10, 0, 0, 0);
+  return start;
+}
+
+// Update the little "Sat 14 Jun · 10:00" summary line in the modal.
+function updateSchedWhen() {
+  const el = document.getElementById('sched-when');
+  if (!el) return;
+  const start = getActiveStart();
+  const dateStr = start.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  el.textContent = `${dateStr} · ${String(start.getHours()).padStart(2, '0')}:00`;
+}
+
+// Select a chip within a row (single-choice), then refresh the summary line.
+function pickChip(el, rowId) {
+  document.querySelectorAll('#' + rowId + ' .sched-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  updateSchedWhen();
+}
+
+function openSchedule() {
+  if (!currentPlace) return;
+  const nameEl = document.getElementById('sched-place');
+  if (nameEl) nameEl.textContent = currentPlace.name || 'this place';
+  updateSchedWhen();
+  document.getElementById('schedule-modal').classList.add('open');
+  document.getElementById('schedule-backdrop').classList.add('open');
+}
+
+function closeSchedule() {
+  document.getElementById('schedule-modal').classList.remove('open');
+  document.getElementById('schedule-backdrop').classList.remove('open');
+}
+
+function confirmSchedule() {
+  if (!currentPlace) return;
+  buildVisitIcs(currentPlace, getActiveStart());
+  closeSchedule();
 }
 
 // Format a Date as floating local iCalendar time: YYYYMMDDTHHMMSS (no Z, no tz)
@@ -1325,13 +1373,8 @@ function icsEscape(s) {
 }
 
 // Build the .ics text and hand it to the OS calendar. No network, no Google API.
-function scheduleVisit(p) {
-  if (!p) return;
-
-  // Read the chosen time; fall back to tomorrow 10:00 if empty/invalid.
-  const input = document.getElementById('d-visit-time');
-  let start = input && input.value ? new Date(input.value) : null;
-  if (!start || isNaN(start.getTime())) start = new Date(defaultVisitTime());
+function buildVisitIcs(p, start) {
+  if (!p || !start) return;
   const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
 
   const uid = `${(p.placeId || 'jib-' + Math.random().toString(36).slice(2))}@joblessberlin.de`;
@@ -1362,24 +1405,18 @@ function scheduleVisit(p) {
   const slug = (p.name || 'place').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'place';
   const filename = `visit-${slug}.ics`;
 
-  // How the file reaches the calendar depends on the device — browsers won't let
-  // a web page launch a desktop calendar app, so:
-  //   • Phones (touch): open the .ics directly → the OS "Add Event" sheet pops up.
-  //   • Computers: download the .ics → the user double-clicks it and the OS opens
-  //     the calendar app. (A direct open on desktop just makes a useless tab.)
-  const isMobile = /Android|iP(hone|ad|od)|Mobile/i.test(navigator.userAgent) ||
-    (navigator.maxTouchPoints > 1 && !window.matchMedia('(pointer:fine)').matches);
-
-  if (isMobile) {
-    window.open(url, '_blank');
-  } else {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
+  // Hand the file over as a properly-named .ics download on every device. This
+  // gives a real filename (visit-{place}.ics, not "Unknown.ics") and lets the OS
+  // recognise it as a calendar event — on iOS this is what surfaces the
+  // "Add to Calendar" option instead of a generic "Save to Files". A web page
+  // can't force the calendar app fully open, so this is the closest reliable path.
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 8000);
 }
 
@@ -1420,11 +1457,6 @@ async function openDetail(p) {
   document.getElementById('detail').classList.add('open');
   document.getElementById('detail-backdrop').classList.add('open');
   document.body.classList.add('detail-open');
-
-  // Pre-fill the "Schedule visit" time picker to tomorrow 10:00 each time the
-  // detail page opens (a sensible default; the user can change it before saving).
-  const visitInput = document.getElementById('d-visit-time');
-  if (visitInput) visitInput.value = defaultVisitTime();
 
   // Fetch full details from Places API if not already loaded
   if (!p.detailLoaded && p.placeId && !p.placeId.startsWith('fb')) {
