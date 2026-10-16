@@ -378,19 +378,22 @@ function distMeters(a, b) {
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
-// ── LAYOUT: position #cats and #map-controls below the topbar dynamically ──
-function openInfo() {
-  document.getElementById('info-panel').classList.add('open');
-  document.getElementById('info-backdrop').classList.add('open');
+// ── INTRO <-> MAP, working with the browser's Back and Forward buttons ──
+// Every switch between the full-page intro and the map (title, "Open the map", the info button,
+// the map card) adds a history entry, so Back returns to where the visitor came from.
+function isIntroOpen() { return document.getElementById('info-panel').classList.contains('open'); }
+function setIntro(open, addHistory) {
+  document.getElementById('info-panel').classList.toggle('open', open);
+  document.getElementById('info-backdrop').classList.toggle('open', open);
+  if (!open) {
+    localStorage.setItem('jib_intro_seen', '1');
+    // Leaving the intro is what starts the (billed) Google Maps load. Does nothing if it is already loaded.
+    loadGoogleMaps();
+  }
+  if (addHistory) history.pushState({ jibView: open ? 'intro' : 'map' }, '');
 }
-function closeInfo() {
-  document.getElementById('info-panel').classList.remove('open');
-  document.getElementById('info-backdrop').classList.remove('open');
-  localStorage.setItem('jib_intro_seen', '1');
-  // Closing the intro is what starts the (billed) Google Maps load.
-  // Does nothing if it's already loaded.
-  loadGoogleMaps();
-}
+function openInfo()  { if (!isIntroOpen()) setIntro(true, true); }
+function closeInfo() { if (isIntroOpen()) setIntro(false, true); }
 
 // First visit: show the full-page intro and do NOT load Google Maps yet.
 // Returning visitors and "?map" links skip the intro and load the map straight away.
@@ -400,16 +403,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const skipIntro = localStorage.getItem('jib_intro_seen') || new URLSearchParams(location.search).has('map');
   if (skipIntro) {
     loadGoogleMaps();
+    history.replaceState({ jibView: 'map' }, '');
   } else {
     document.getElementById('info-panel').classList.add('open');
+    history.replaceState({ jibView: 'intro' }, '');
   }
 });
+// Browser Back / Forward: show the view that history entry was created for
+window.addEventListener('popstate', (e) => {
+  const view = e.state && e.state.jibView;
+  if (view === 'intro') setIntro(true, false);
+  else if (view === 'map') setIntro(false, false);
+});
 
-function toggleDarkMode() {
-  const dark = document.body.classList.toggle('dark');
+function applyDark(dark) {
+  document.body.classList.toggle('dark', dark);
   document.querySelectorAll('.js-dark-toggle').forEach(b => { b.textContent = dark ? '☀️' : '🌙'; });
   if (map) map.setOptions({ styles: dark ? MAP_STYLES_DARK : MAP_STYLES_LIGHT });
 }
+function toggleDarkMode() {
+  const dark = !document.body.classList.contains('dark');
+  applyDark(dark);
+  try { localStorage.setItem('jib_theme', dark ? 'dark' : 'light'); } catch (e) {}
+}
+// Start in the visitor's saved choice, otherwise follow their device setting
+document.addEventListener('DOMContentLoaded', () => {
+  let saved = null;
+  try { saved = localStorage.getItem('jib_theme'); } catch (e) {}
+  applyDark(saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches);
+});
 
 function updateLayout() {
   const topbarH  = document.getElementById('topbar').offsetHeight;
@@ -481,7 +503,7 @@ async function initMap() {
       strictBounds: true,
     },
     disableDefaultUI: true,
-    styles: MAP_STYLES_LIGHT,
+    styles: document.body.classList.contains('dark') ? MAP_STYLES_DARK : MAP_STYLES_LIGHT,
   });
 
   // Custom HTML marker class
