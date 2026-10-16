@@ -6,6 +6,8 @@
   <title>Jobless in Berlin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet"/>
+  <!-- Try-out: DM Sans, used only for the paragraphs on the intro page -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
@@ -39,7 +41,7 @@
   </div>
   <div id="loader" class="loader-ring" style="display:none"></div>
   <button id="info-toggle" onclick="openInfo()" title="Info">ℹ️</button>
-  <button id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
+  <button id="dark-toggle" class="js-dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
 </div>
 
 <div id="cats">
@@ -89,50 +91,102 @@
 
 <div id="info-backdrop" onclick="closeInfo()"></div>
 <div id="info-panel">
-  <div id="info-drag-handle"><div class="handle"></div></div>
   <div id="info-panel-header">
-    <button class="saved-close-btn" onclick="closeInfo()">←</button>
-    <div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <h2 style="margin: 0;">Jobless in Berlin</h2>
-        <span class="beta-badge">Beta</span>
+    <div class="intro-header-inner">
+      <!-- Same title block as the real topbar: title + Beta badge + tagline -->
+      <a class="intro-home" href="?map" onclick="closeInfo(); return false;" title="Open the map">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2 class="intro-title">Jobless in Berlin</h2>
+          <span class="beta-badge">Beta</span>
+        </div>
+        <p class="intro-tagline">Your calendar's empty. Berlin isn't.</p>
+      </a>
+      <div class="intro-header-actions">
+        <button type="button" class="intro-open-map" onclick="closeInfo()">Open the map →</button>
+        <button type="button" class="intro-icon-btn" aria-pressed="true" onclick="closeInfo()" title="You are on the info page. Click to open the map">ℹ️</button>
+        <button type="button" class="intro-icon-btn js-dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
       </div>
-      <p style="font-size: 12px; font-weight: 600; color: #aaa; margin: 2px 0 0;">v1.0 · still growing</p>
     </div>
   </div>
-  <div style="padding: 24px 24px 40px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 32px;">
+  <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column;">
+  <div class="intro-column">
 
-    <!-- Story -->
-    <div>
-      <p style="font-size: 14px; line-height: 1.7; margin: 0; font-weight: 500;">My role got impacted. After 5 years, I had nowhere to go, no task to do, no meeting to attend.</p>
-      <p style="font-size: 14px; line-height: 1.7; margin: 12px 0 0; font-weight: 500;">I'm an immigrant. My social life was mostly built around work. When the job disappeared, a lot of the structure around my day disappeared with it — and the city suddenly felt too big.</p>
-      <p style="font-size: 14px; line-height: 1.7; margin: 12px 0 0; font-weight: 500;">So I built this. Not to find a place — but to figure out how to live this new life.</p>
+    <!-- Two columns on desktop (text left, video + map right); stacks on mobile.
+         The .intro-* order classes control the stacked order. -->
+    <!-- Headline: full width on top; columns below -->
+    <div class="intro-o1">
+      <p class="intro-headline" style="margin: 0;">I built a vibes map to figure out how to navigate life after my layoff</p>
     </div>
 
-    <!-- How it works -->
-    <div class="info-box" style="background: #EDE8E2; border-radius: 14px; padding: 18px 20px; border: var(--border);">
-      <p style="font-size: 13px; font-weight: 800; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.05em;">💡 How it works</p>
-      <p style="font-size: 14px; line-height: 1.7; margin: 0; font-weight: 500;">Filter by how you're feeling. Tap a vibe — quiet, free, focus, sun — and the map shows you what fits.</p>
+    <!-- Row wrapper: video (sticky) + text. The footer is outside it, so the video never overlaps the footer. -->
+    <div class="intro-row">
+    <div class="intro-left">
+
+      <div class="intro-o3">
+      <!-- Story text -->
+      <div>
+        <div class="intro-section">
+          <h2 class="intro-label">The problem</h2>
+          <p class="intro-text" style="margin: 0;">For years, my days had a shape: wake up, go to the office. Then my role was impacted and I woke up with nowhere to be. Berlin felt too big, and Google Maps showed me where places were, not which one fit how I felt that day.</p>
+        </div>
+        <div class="intro-section">
+          <h2 class="intro-label">My role</h2>
+          <p class="intro-text" style="margin: 0;">Solo product designer, 0→1 and end to end: problem framing, concept, UX and UI, and implementation (vibe coded). I used design thinking to turn how people feel into the way they find a place.</p>
+        </div>
+        <div class="intro-section">
+          <h2 class="intro-label">Fails, learns &amp; key decisions</h2>
+          <p class="intro-text" style="margin: 0;">My first vibe-coded project taught me not to trust the AI blindly. I didn't understand how the Google APIs worked, so every search and photo became a paid request, and an unexpected bill arrived: €98.69, with photos the biggest cost at 19,504 requests.</p>
+          <p class="intro-text" style="margin: 12px 0 0;">I made the bill a design constraint: Berlin instead of all of Germany, one starting vibe with the rest loaded on demand, a "Search here" button instead of dynamic loading, and photos only when users click on a place. The bill dropped.</p>
+          <p class="intro-text" style="margin: 12px 0 0;">Now I set quota caps and budget alerts before anything ships, I question what the AI builds and what impact it has, and I've learned how to negotiate better with developers.</p>
+          <p class="intro-text" style="margin: 12px 0 0;">Another big shift was designing hands-on in code, not just in Figma, which meant learning GitHub too, and the hard way how to protect secret keys after I exposed one in an AI chat.</p>
+        </div>
+      </div>
+      </div>
+
     </div>
 
-    <!-- Contribute -->
+    <div class="intro-right">
+
+      <!-- Video: Loom embed (embed address = loom.com/embed/ + the ID at the end of the share link). The video is 1272x720 (about 16:9); the frame uses that exact ratio. The ?hide_... options come from Loom's help page (hide the top bar, title, owner, share button, speed badge). -->
+      <!-- Card: video on top, "Try it yourself" link underneath. Only the link opens the map
+           (that is also the moment Google Maps starts loading); the video itself just plays. -->
+      <div class="intro-o2 intro-video-card">
+        <iframe class="intro-video" src="https://www.loom.com/embed/c07e212aa4874bfebb2c48ca34fff4ee?hide_owner=true&amp;hide_share=true&amp;hide_title=true&amp;hideEmbedTopBar=true&amp;hide_speed=true" title="Mood Based Map Built After Layoff (Loom video)" loading="lazy" allow="fullscreen" allowfullscreen></iframe>
+        <div class="intro-video-cta-bar">
+          <button type="button" class="intro-video-cta" onclick="closeInfo()">Try it yourself</button>
+        </div>
+      </div>
+
+    </div>
+
+    </div>
+
+    <!-- Footer, full width under the columns -->
+    <div class="intro-footer">
+      <!-- HIDDEN FOR NOW (this page is aimed at recruiters): the divider and the two end-user blocks
+           below ("Know a good spot?" + Google Maps notice). To bring them back, delete the word
+           "hidden" from the two tags that carry it. -->
+      <div class="info-divider" hidden style="border-top: 1px solid rgba(0,0,0,0.1);"></div>
+      <div class="intro-footer-cols" hidden>
+        <!-- Contribute -->
     <div>
       <p style="font-size: 13px; font-weight: 800; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.05em;">Know a good spot?</p>
       <p style="font-size: 14px; line-height: 1.7; margin: 0 0 12px; font-weight: 500;">This is not a finished app and no place paid to be here. If you know somewhere that should be on the map, send it over.</p>
       <a class="info-email-btn" href="mailto:joblessinberlin@gmail.com" style="display: inline-block; font-size: 14px; font-weight: 800; padding: 10px 18px; border-radius: 99px; border: var(--border); box-shadow: var(--shadow-sm); background: #F5F0EB; text-decoration: none; color: var(--black);">✉️ joblessinberlin@gmail.com</a>
     </div>
-
-    <!-- Disclaimer -->
+        <!-- Disclaimer -->
     <div class="info-box" style="background: #EDE8E2; border-radius: 14px; padding: 14px 18px; border: var(--border);">
-      <p class="info-disclaimer-text" style="font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500; color: #666;">⚠️ This app uses Google Maps Platform. Place information like rating, price and directions is based on the Google Maps database — we don't control the content or quality, so always double-check before you go. If you spot something wrong, please send us an email.</p>
-    </div>
-
-    <!-- Made by -->
+          <p class="info-disclaimer-text" style="font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500; color: #666;">⚠️ This app uses Google Maps Platform. Place information like rating, price and directions is based on the Google Maps database — we don't control the content or quality, so always double-check before you go. If you spot something wrong, please send us an email.</p>
+        </div>
+      </div>
+      <!-- Made by -->
     <div class="info-madeby" style="margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.1);">
-      <p style="font-size: 13px; font-weight: 500; color: #888; margin: 0;">Made by <a href="https://www.linkedin.com/in/cassianunes/" target="_blank" style="color: var(--black); font-weight: 800; text-decoration: none;">Cássia Nunes</a> · Berlin, 2026 ✨</p>
-      <p style="font-size: 13px; font-weight: 500; color: #aaa; line-height: 1.6; margin: 8px 0 0;">Product designer. I build things like this to solve real problems — <a href="https://www.linkedin.com/in/cassianunes/" target="_blank" style="color: var(--black); font-weight: 800; text-decoration: none;">open to what's next →</a></p>
+      <p style="font-size: 15px; font-weight: 500; color: #555; margin: 0;">Made by <a href="https://www.linkedin.com/in/cassianunes/" target="_blank" style="color: var(--black); font-weight: 800; text-decoration: none;">Cássia Nunes</a> · Berlin, 2026 ✨</p>
+      <p style="font-size: 15px; font-weight: 500; color: #666; line-height: 1.6; margin: 8px 0 0;">Product designer. I build things like this to solve real problems — <a href="https://www.linkedin.com/in/cassianunes/" target="_blank" style="color: var(--black); font-weight: 800; text-decoration: none;">open to what's next →</a></p>
+    </div>
     </div>
 
+  </div>
   </div>
 </div>
 
@@ -243,8 +297,18 @@
 
 <script src="app.js"></script>
 
-<script async
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAdknw0YV5gcGS59LnMfldczDSNa9vhk_o&callback=initMap&v=weekly&language=en&region=DE">
+<script>
+  // Google Maps is loaded ON DEMAND (each map load is billed), not on page open.
+  // loadGoogleMaps() is safe to call more than once: it only loads one time.
+  var mapsRequested = false;
+  function loadGoogleMaps() {
+    if (mapsRequested) return;
+    mapsRequested = true;
+    var el = document.createElement('script');
+    el.async = true;
+    el.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAdknw0YV5gcGS59LnMfldczDSNa9vhk_o&callback=initMap&v=weekly&language=en&region=DE";
+    document.head.appendChild(el);
+  }
 </script>
 </body>
 </html>
