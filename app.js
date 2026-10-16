@@ -273,30 +273,6 @@ function closeSaved() {
   handle.addEventListener('touchend',   onEnd,   { passive: true });
 })();
 
-// Swipe-to-dismiss for info panel (mobile)
-(function() {
-  const panel = document.getElementById('info-panel');
-  const handle = document.getElementById('info-drag-handle');
-  let startY = 0, dragging = false;
-  function onStart(e) { startY = e.touches[0].clientY; dragging = true; panel.style.transition = 'none'; }
-  function onMove(e) {
-    if (!dragging) return;
-    const dy = Math.max(0, e.touches[0].clientY - startY);
-    panel.style.transform = `translateY(${dy}px)`;
-  }
-  function onEnd(e) {
-    if (!dragging) return;
-    dragging = false;
-    panel.style.transition = '';
-    const dy = e.changedTouches[0].clientY - startY;
-    if (dy > 80) { panel.style.transform = ''; closeInfo(); }
-    else { panel.style.transform = ''; }
-  }
-  handle.addEventListener('touchstart', onStart, { passive: true });
-  handle.addEventListener('touchmove',  onMove,  { passive: true });
-  handle.addEventListener('touchend',   onEnd,   { passive: true });
-})();
-
 async function renderSavedPanel() {
   const list = document.getElementById('saved-list');
   if (!list) return;
@@ -410,11 +386,28 @@ function openInfo() {
 function closeInfo() {
   document.getElementById('info-panel').classList.remove('open');
   document.getElementById('info-backdrop').classList.remove('open');
+  localStorage.setItem('jib_intro_seen', '1');
+  // Closing the intro is what starts the (billed) Google Maps load.
+  // Does nothing if it's already loaded.
+  loadGoogleMaps();
 }
+
+// First visit: show the full-page intro and do NOT load Google Maps yet.
+// Returning visitors and "?map" links skip the intro and load the map straight away.
+// Runs on DOMContentLoaded because loadGoogleMaps() is defined in a script
+// that comes after this file in index.html.
+document.addEventListener('DOMContentLoaded', () => {
+  const skipIntro = localStorage.getItem('jib_intro_seen') || new URLSearchParams(location.search).has('map');
+  if (skipIntro) {
+    loadGoogleMaps();
+  } else {
+    document.getElementById('info-panel').classList.add('open');
+  }
+});
 
 function toggleDarkMode() {
   const dark = document.body.classList.toggle('dark');
-  document.getElementById('dark-toggle').textContent = dark ? '☀️' : '🌙';
+  document.querySelectorAll('.js-dark-toggle').forEach(b => { b.textContent = dark ? '☀️' : '🌙'; });
   if (map) map.setOptions({ styles: dark ? MAP_STYLES_DARK : MAP_STYLES_LIGHT });
 }
 

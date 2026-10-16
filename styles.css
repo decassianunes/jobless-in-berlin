@@ -22,7 +22,7 @@
       position: fixed; top: 0; left: 0; right: 0; z-index: 30;
       background: #F5F0EB;
       border-bottom: var(--border);
-      padding: 16px 16px 14px;
+      padding: 16px 24px 14px;
       display: flex; align-items: flex-start; gap: 10px;
     }
     #topbar h1 { font-size: 26px; font-weight: 800; color: var(--black); letter-spacing: -0.5px; line-height: 1.1; }
@@ -51,7 +51,7 @@
     /* ── CATEGORY TILES ── */
     #cats {
       position: fixed; top: 0; left: 0; right: 0; z-index: 30; /* top set dynamically by updateLayout() */
-      display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+      display: flex; align-items: center; gap: 8px; padding: 10px 24px;
       background: #F5F0EB; border-bottom: var(--border);
     }
     #vibes-scroll {
@@ -175,51 +175,145 @@
     body.dark #info-toggle { color: #F0EBE3; border-color: rgba(255,255,255,0.2); }
     body.dark #info-toggle:hover { background: rgba(255,255,255,0.08); }
 
-    /* info panel — slides in from right, same pattern as #detail */
+    /* info panel — full-page intro */
     #info-backdrop {
       display: none; position: fixed; inset: 0; z-index: 49;
       background: rgba(0,0,0,0.25);
     }
     #info-backdrop.open { display: block; }
-    /* Mobile: full-page, slides in from the right */
+    /* Full-page intro: fades in and out (no slide, since there is no page to go back to) */
     #info-panel {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       height: 100dvh; z-index: 50;
       background: #F5F0EB;
       border-radius: 0;
-      transform: translateX(100%);
-      transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity 0.35s ease, visibility 0s linear 0.35s;
       display: flex; flex-direction: column; overflow: hidden;
     }
-    #info-panel.open { transform: translateX(0); }
-    /* Desktop: right sidebar */
-    @media (min-width: 768px) {
-      #info-panel {
-        top: 0; right: 0; bottom: 0; left: auto;
-        width: min(400px, 100vw); height: 100%;
-        border-radius: 0; border-left: var(--border);
-        transform: translateX(100%);
-        box-shadow: -4px 0 20px rgba(0,0,0,0.12);
-      }
-      #info-panel.open { transform: translateX(0); }
+    #info-panel.open {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transition: opacity 0.35s ease;
     }
+    @media (prefers-reduced-motion: reduce) {
+      #info-panel, #info-panel.open { transition: none; }
+    }
+    /* Header matches the real topbar: title on the left, ℹ️ and 🌙 on the right */
+    /* Header copies the real #topbar: same padding, title size, tagline, top-aligned buttons */
+    #info-panel #info-panel-header { padding: 16px 24px 14px; }
+    .intro-header-inner {
+      width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+    }
+    #info-panel-header .intro-title { margin: 0; color: var(--black); font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+    .intro-tagline { font-size: 12px; font-weight: 500; color: #888; margin: 5px 0 0; line-height: 1.45; }
+    body.dark #info-panel .intro-tagline { color: #888; }
+    .intro-home { color: inherit; text-decoration: none; cursor: pointer; }
+    .intro-home:hover h2 { text-decoration: underline; }
+    .intro-header-actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .intro-open-map {
+      font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
+      padding: 7px 14px; border-radius: 99px; border: var(--border);
+      box-shadow: var(--shadow-sm); background: #F5F0EB; color: var(--black);
+      white-space: nowrap;
+    }
+    body.dark #info-panel .intro-open-map { background: #2A2521; color: #F0EBE3; }
+    .intro-icon-btn {
+      flex-shrink: 0; width: 30px; height: 30px;
+      border: 1px solid rgba(0,0,0,0.18); border-radius: 10px;
+      background: transparent; box-shadow: none;
+      font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    @media (hover: hover) { .intro-icon-btn:hover { background: rgba(0,0,0,0.06); } }
+    /* ℹ️ is "pressed" while the info page is open, so it is clear where you are */
+    .intro-icon-btn[aria-pressed="true"] { background: rgba(0,0,0,0.1); border-color: var(--black); }
+    body.dark .intro-icon-btn[aria-pressed="true"] { background: rgba(255,255,255,0.14); border-color: #F0EBE3; }
+    body.dark .intro-icon-btn { color: #F0EBE3; border-color: rgba(255,255,255,0.2); }
+    body.dark .intro-icon-btn:hover { background: rgba(255,255,255,0.08); }
+    /* Two columns on desktop (text left, video + map preview right).
+       Below 900px the wrappers disappear (display: contents) and the .intro-oN
+       classes put everything in one stacked order: headline, video, text, map. */
+    .intro-column {
+      max-width: 1120px; width: 100%; margin: 0 auto; box-sizing: border-box;
+      padding: 48px 24px 40px; flex: 1 0 auto;   /* fills the page height so the footer can sit at the very bottom */
+      display: flex; flex-wrap: wrap; column-gap: 64px; row-gap: 32px;
+      align-content: space-between;              /* content on top, footer ("Made by") pinned to the bottom */
+    }
+    .intro-left  { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 32px; }
+    .intro-right { flex: 0 0 480px; display: flex; flex-direction: column; gap: 20px; align-self: flex-start; }
+    /* Fewer awkward line breaks, without justifying (justified text opens uneven gaps in a narrow column).
+       Unsupported browsers simply ignore these two lines. */
+    .intro-left p { text-wrap: pretty; }
+    /* Headline: slightly larger than the page title (26px), spans both columns on desktop */
+    .intro-headline { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; }
+    @media (max-width: 899px) { .intro-headline { font-size: 24px; } }
+    /* Font try-out for the reading text: DM Sans, regular weight, 15px. Revert = delete this rule. */
+    .intro-text { font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; font-weight: 400; line-height: 1.7; }
+    .intro-text strong { font-weight: 700; }
+    /* Section headings inside the text (from the Figma file): 18px bold, on their own line */
+    .intro-label { display: block; margin: 0; font-family: 'DM Sans', system-ui, sans-serif; font-size: 18px; font-weight: 700; line-height: 25.5px; }
+    .intro-section + .intro-section { margin-top: 12px; }
+    /* Footer text uses the same reading font as the paragraphs */
+    .info-madeby p, .info-madeby a { font-family: 'DM Sans', system-ui, sans-serif; }
+    /* Beta badge HIDDEN on the intro page for now. To bring it back, delete this one rule. */
+    .intro-home .beta-badge { display: none; }
+    /* Desktop: video on the left, text on the right (phones keep headline, video, text) */
+    @media (min-width: 900px) {
+      .intro-column { flex-direction: row-reverse; }
+      .intro-o1 { flex: 0 0 100%; }   /* headline gets its own full-width row on top */
+      .intro-row { flex: 0 0 100%; display: flex; flex-direction: row-reverse; column-gap: 64px; align-items: flex-start; }
+      .intro-right { position: sticky; top: 24px; }   /* video stays in view while the text scrolls */
+    }
+    .intro-o1 p { text-wrap: balance; }
+    .intro-footer { flex: 0 0 100%; display: flex; flex-direction: column; gap: 32px; margin-top: auto; }  /* margin-top: auto = bottom on phones */
+    .intro-footer-cols[hidden] { display: none; }  /* the grid rule below would otherwise override "hidden" */
+    .intro-footer-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; margin-top: 8px; }  /* extra air after the divider */
+    .intro-video { display: block; width: 100%; aspect-ratio: 1272 / 720; background: #000; border: 0; }  /* matches the Loom recording (no side bars) */
+    @media (max-width: 560px) {
+      #info-panel #info-panel-header { padding-bottom: 12px; }
+      .intro-open-map { display: none; }  /* phones: header shows only ℹ️ and 🌙, like the real topbar */
+    }
+    @media (max-width: 899px) {
+      .intro-open-map { font-size: 12px; padding: 6px 10px; }
+      .intro-column { flex-direction: column; flex-wrap: nowrap; row-gap: 32px; align-content: normal; padding-top: 32px; }
+      .intro-row, .intro-left, .intro-right { display: contents; }
+      .intro-o1 { order: 1; } .intro-o2 { order: 2; } .intro-o3 { order: 3; }
+     
+      .intro-footer { order: 5; flex-basis: auto; }
+      .intro-footer-cols { grid-template-columns: 1fr; }
+    }
+    /* Video card: video on top, "Try it yourself" button underneath */
+    .intro-video-card {
+      border: var(--border); border-radius: 14px; overflow: hidden;
+      box-shadow: var(--shadow-sm); background: #EDE8E2;
+    }
+    /* Slim bar under the video: a centered text link that opens the map */
+    .intro-video-cta-bar { display: flex; justify-content: center; padding: 12px 18px; border-top: var(--border); }
+    .intro-video-cta {
+      padding: 0; border: 0; background: none; cursor: pointer;
+      font-family: inherit; font-size: 14px; font-weight: 800; color: var(--black);
+    }
+    .intro-video-cta:hover { text-decoration: underline; }
+    body.dark #info-panel .intro-video-card { background: #2A2521; }
     body.dark #info-panel { background: #1A1714; border-color: #444; color: #F0EBE3; }
     body.dark #info-panel h2,
     body.dark #info-panel p { color: #F0EBE3; }
     body.dark #info-panel .info-box { background: #2A2521 !important; }
     body.dark #info-panel .info-disclaimer-text { color: #aaa !important; }
     body.dark #info-panel .info-email-btn { background: #2A2521 !important; color: #F0EBE3 !important; }
-    body.dark #info-panel .info-madeby { border-top-color: rgba(255,255,255,0.1) !important; }
+    body.dark #info-panel .info-madeby,
+    body.dark #info-panel .info-divider { border-top-color: rgba(255,255,255,0.1) !important; }
     #info-drag-handle { padding: 14px 0 6px; cursor: grab; flex-shrink: 0; text-align: center; }
     #info-drag-handle .handle { width: 44px; height: 5px; border-radius: 99px; background: #111; opacity: 0.35; margin: 0 auto; }
     body.dark #info-drag-handle .handle { background: #F0EBE3; }
-    @media (min-width: 768px) { #info-drag-handle { display: none; } }
+    #info-drag-handle { display: none; }  /* intro is a page now, not a bottom sheet */
 
     #search-bar {
       display: none;
       position: fixed; top: 0; left: 0; right: 0; z-index: 31;
       align-items: center; gap: 8px;
-      padding: 10px 16px;
+      padding: 10px 24px;
       background: #F5F0EB; border-bottom: var(--border);
     }
     #search-bar.open { display: flex; }
@@ -269,14 +363,14 @@
 
     .handle { width: 40px; height: 4px; border-radius: 2px; background: var(--black); margin: 0 auto; }
 
-    .sheet-header { padding: 10px 16px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .sheet-header { padding: 10px 24px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .sheet-label { font-size: 16px; font-weight: 700; line-height: 1; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
     .sheet-count { font-size: 11px; font-weight: 700; color: #888; }
 
     /* ── CARDS ── */
     #cards {
       display: flex; gap: 12px;
-      overflow-x: auto; overflow-y: hidden; padding: 10px 16px 16px;
+      overflow-x: auto; overflow-y: hidden; padding: 10px 24px 16px;
       scroll-snap-type: x mandatory;
       touch-action: pan-x;
       overscroll-behavior-x: contain;
@@ -416,13 +510,13 @@
       #saved-drag-handle  { display: none !important; }
       #info-drag-handle   { display: none !important; }
       /* Description: show on mobile too */
-      #topbar { align-items: flex-start; padding: 16px 16px 12px; }
+      #topbar { align-items: flex-start; padding: 16px 24px 12px; }
       /* Remove the right-edge gradient fade that cuts off the last pill */
       #vibes-fade { display: none; }
       /* Slightly smaller pill label on mobile (still legible) */
       .vibe-pill { font-size: 11px; }
       /* Breathing room after the last pill (gradient fade is gone on mobile) */
-      #vibes-scroll { padding-right: 16px; }
+      #vibes-scroll { padding-right: 24px; }
       /* Handle: larger touch area on mobile */
       .handle-wrap { padding: 18px 0 14px !important; }
       .handle { width: 48px; height: 5px; border-radius: 3px; opacity: 0.7; }
@@ -761,7 +855,7 @@
 
     /* ── MAP CONTROLS (zoom + locate, Google Maps style) ── */
     #map-controls {
-      position: fixed; top: 0; right: 12px; z-index: 35; /* top set dynamically by updateLayout() */
+      position: fixed; top: 0; right: 20px; z-index: 35; /* top set dynamically by updateLayout() */
       display: flex; flex-direction: column;
       border: 1px solid rgba(0,0,0,0.18); border-radius: 14px;
       overflow: hidden; box-shadow: none; background: #F5F0EB;
