@@ -426,11 +426,11 @@ function toggleDarkMode() {
   applyDark(dark);
   try { localStorage.setItem('jib_theme', dark ? 'dark' : 'light'); } catch (e) {}
 }
-// Start in the visitor's saved choice, otherwise follow their device setting
+// Light by default; dark only if the visitor chose it with the button
 document.addEventListener('DOMContentLoaded', () => {
   let saved = null;
   try { saved = localStorage.getItem('jib_theme'); } catch (e) {}
-  applyDark(saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches);
+  applyDark(saved === 'dark');
 });
 
 function updateLayout() {
